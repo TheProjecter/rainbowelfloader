@@ -1,0 +1,2 @@
+fixlib -s
+pause
