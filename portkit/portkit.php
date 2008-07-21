@@ -88,7 +88,7 @@ elseif( $argv[ 1 ] == '-f' )
 
         $hx_code = "";
         
-        echo $data[ 0 ] . " at 0x" . dechex( $address ) . "\n";
+        echo $data[ 0 ] . " at 0x" . dechex( $address ) + hexdec( "10040000" ) . "\n";
         $dt = unpack( "C*", $code );
         
         for( $i = 1; $i < count( $dt ); $i++ )
