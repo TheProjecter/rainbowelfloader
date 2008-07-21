@@ -35,6 +35,7 @@ if( $argc <= 1 )
 }
 
 $already_in = array( );
+$_functions_db = array( );
 
 if( $argv[ 1 ] == '-sh' )
 {
@@ -122,6 +123,7 @@ elseif( $argv[ 1 ] == '-sf' )
         if( $faddr > 1 )
         {
             printf( "%s at %X\n", $data[ 0 ], $faddr + hexdec( "10040000" ) );
+            $_functions_db[ $data[ 0 ] ] = $faddr;
             fwrite( $newlib, sprintf( "%s=%x\n", $data[ 0 ], $faddr + hexdec( "10040000" ) ) );
         }
         else
@@ -134,12 +136,26 @@ elseif( $argv[ 1 ] == '-sf' )
     fclose( $newlib );
 }
 
+function function_offset( $function )
+{
+    global $_functions_db;
+    if( array_key_exists( $function, $_functions_db ) )
+        return $_functions_db[ $function ];
+    return -1;
+}
+
 function find_bytes( $content, $bytes, $offset = 0 )
 {
 	if(preg_match("#^[0-9A-Fa-f]*$#", $bytes))
 	{
 		$a = pack("H*", $bytes);
 		return strpos($content, $a, $offset);
+	}
+	elseif( preg_match( "#^from\s*\(\s*([a-zA-Z0-9_]+)\s*\+\s*0x([A-Fa-f0-9]*)\)\,\s*([A-Fa-f0-9]*)#s", $bytes, $r ) )
+	{
+        $t_offset = function_offset( $r[ 1 ] ) + hexdec( $r[ 2 ] );
+        if( $t_offset > 0 )
+            return find_bytes( $content, $r[ 3 ], $t_offset );//return strpos($content, $a, $t_offset);
 	}
 	else
 	{
