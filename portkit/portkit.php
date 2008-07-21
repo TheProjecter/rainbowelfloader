@@ -134,18 +134,18 @@ elseif( $argv[ 1 ] == '-sf' )
     fclose( $newlib );
 }
 
-function find_bytes( $content, $bytes )
+function find_bytes( $content, $bytes, $offset = 0 )
 {
 	if(preg_match("#^[0-9A-Fa-f]*$#", $bytes))
 	{
 		$a = pack("H*", $bytes);
-		return strpos($content, $a);
+		return strpos($content, $a, $offset);
 	}
 	else
 	{
 		$to_find = "#" . preg_replace("#([0-9A-Fa-f]{2})#", "\\\\x$1", $bytes) . "#";
 		$to_find = str_replace("??", ".", $to_find);
-		preg_match($to_find, $content, $t, PREG_OFFSET_CAPTURE);
+		preg_match($to_find, $content, $t, PREG_OFFSET_CAPTURE, $offset);
 		return $t[ 0 ][ 1 ];
 	}
 }
