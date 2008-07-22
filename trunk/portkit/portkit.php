@@ -114,17 +114,41 @@ elseif( $argv[ 1 ] == '-sf' )
     foreach( $functions as $function )
     {
         $binary = "";
+        $offset = 0;
         $data = explode( "=", $function );
 
-        $binary = $data[ 1 ];
+        $binary = trim( $data[ 1 ] );
 
-        $faddr = find_bytes( $input, $binary );
+        $data[ 0 ] = rtrim( $data[ 0 ] );
+        
+        if( strlen( $data[ 0 ] ) <= 0 ) continue;
+        
+        $addr_add = 0;
+        if( strpos( $data[ 0 ], "+" ) )
+        {
+            $_exp = explode( "+", $data[ 0 ] );
+            $data[ 0 ] = trim( $_exp[ 1 ] );
+            $_exp[ 0 ] = str_replace( "0x", "", $_exp[ 0 ] );
+            $addr_add = hexdec( $_exp[ 0 ] );
+        }
+        
+        if( strpos( $data[ 0 ], "," ) ) //to select the occurrence
+        {
+            $p = explode( ",", $data[ 0 ] );
+            for( $i = 1; $i < trim( $p[ 1 ] ); $i++ )
+            {
+                $offset = find_bytes( $input, $binary, $offset ) + 4;
+            }
+            $data[ 0 ] = rtrim( $p[ 0 ] );
+        }
+
+        $faddr = find_bytes( $input, $binary, $offset );
         
         if( $faddr > 1 )
         {
             printf( "%s at %X\n", $data[ 0 ], $faddr + hexdec( "10040000" ) );
-            $_functions_db[ $data[ 0 ] ] = $faddr;
-            fwrite( $newlib, sprintf( "%s=%x\n", $data[ 0 ], $faddr + hexdec( "10040000" ) ) );
+            $_functions_db[ $data[ 0 ] ] = $faddr + $addr_add;
+            fwrite( $newlib, sprintf( "%s = %x\n", $data[ 0 ], $faddr + hexdec( "10040000" ) + $addr_add ) );
         }
         else
         {
@@ -155,7 +179,7 @@ function find_bytes( $content, $bytes, $offset = 0 )
 	{
         $t_offset = function_offset( $r[ 1 ] ) + hexdec( $r[ 2 ] );
         if( $t_offset > 0 )
-            return find_bytes( $content, $r[ 3 ], $t_offset );//return strpos($content, $a, $t_offset);
+            return find_bytes( $content, $r[ 3 ], $t_offset );
 	}
 	else
 	{
