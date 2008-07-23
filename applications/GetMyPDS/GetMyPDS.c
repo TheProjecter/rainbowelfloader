@@ -105,7 +105,7 @@ UINT32 HelloWorldExit( EVENT_STACK_T *ev_st,  void *app )
 }
 
 #define PDS_AREA      0x10010000
-#define PDS_AREA_SIZE 0x1FFFF
+#define PDS_AREA_SIZE 0x20000
 WCHAR pds[] = {'f', 'i', 'l', 'e', ':', '/', '/', 'a', '/', 'p', 'd', 's', '.', 'b', 'a', 'k', 0};
 
 void Backup( )
