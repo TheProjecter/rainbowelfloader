@@ -1,0 +1,20 @@
+#summary How-to use the PortKit.
+
+= Needed things =
+
+First of all, we need:
+  * portkit.php or .exe (check repository)
+  * functions.pat (check repository)
+  * CG1 from the firmware in which you intend to use the elfloader (named in this tutorial CG1.smg)
+  * ElfLoader source code (check repository)
+  * ElfLoader Spawner source code (check repository)
+
+= Let's start =
+
+Put portkit.exe or .php and functions.pat in the same folder of CG1.smg.
+
+Now create a file called port.bat (on win) or port.sh (on linux) in this file write:
+  * {{{portkit.exe -sf functions.pat CG1.smg}}} if you are in win
+  * {{{php ./portkit.php -sf functions.pat CG1.smg}}} if you are in linux
+
+Then run the created file and a file named newlib.sym will be created.
