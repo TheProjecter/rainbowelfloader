@@ -175,7 +175,7 @@ function find_bytes( $content, $bytes, $offset = 0 )
 		$a = pack("H*", $bytes);
 		return strpos($content, $a, $offset);
 	}
-	elseif( preg_match( "#^from\s*\(\s*([a-zA-Z0-9_]+)\s*\+\s*0x([A-Fa-f0-9]*)\)\,\s*([A-Fa-f0-9]*)#s", $bytes, $r ) )
+	elseif( preg_match( "#^from\s*\(\s*([a-zA-Z0-9_]+)\s*\+\s*0x([A-Fa-f0-9]*)\)\,\s*([A-Fa-f0-9\?]*)#s", $bytes, $r ) )
 	{
         $t_offset = function_offset( $r[ 1 ] ) + hexdec( $r[ 2 ] );
         if( $t_offset > 0 )
