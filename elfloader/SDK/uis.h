@@ -356,12 +356,6 @@ typedef struct
 typedef UINT32 ( *f_UIS_SetWallpaper )(SETWALLPAPER_SETTINGS_T * );  
 f_UIS_SetWallpaper UIS_SetWallpaper = ( f_UIS_SetWallpaper )0x108C6232;
 
-typedef void * ( *f_uisAllocateMemory )( UINT32 size, INT32 *result ); //result can be NULL
-f_uisAllocateMemory uisAllocateMemory = ( f_uisAllocateMemory )0x1086D4D8;
-
-typedef void ( *f_uisFreeMemory )( void *ptr );
-f_uisFreeMemory uisFreeMemory = ( f_uisFreeMemory )0x1086DA6C;
-
 typedef UINT32 ( *f_UIS_SetBacklight )( UINT8 P1 );
 f_UIS_SetBacklight UIS_SetBacklight = ( f_UIS_SetBacklight )0x108C5CD6;
 
