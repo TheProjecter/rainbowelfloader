@@ -1,0 +1,306 @@
+#ifndef SDK_DL_H
+#define SDK_DL_H
+
+#include <typedefs.h>
+
+#define KEY_0       	0
+#define KEY_1       	1
+#define KEY_2       	2
+#define KEY_3       	3
+#define KEY_4       	4
+#define KEY_5       	5
+#define KEY_6       	6
+#define KEY_7       	7
+#define KEY_8       	8
+#define KEY_9       	9
+#define KEY_STAR    	10
+#define KEY_POUND   	11
+
+#define KEY_RED     	17
+#define KEY_GREEN   	18
+
+#define KEY_LSOFT   	14 
+#define KEY_RSOFT   	15 
+#define KEY_MENU    	20
+
+#define KEY_SMART   	21
+
+#define KEY_VOLUP   	23
+#define KEY_VOLDOWN 	24
+
+#define KEY_UP      	44
+#define KEY_DOWN    	45
+#define KEY_LEFT    	46
+#define KEY_RIGHT   	47
+#define KEY_CENTER  	61 
+
+#define KEY_CAM    		0x3F
+
+#define KEY_VOICE   	0x2B
+#define KEY_HANDSFREE   0x33
+#define KEY_ITUNES 		0x42
+
+
+/******************************
+   Свет 
+*******************************/
+
+/* Отключить диспей */
+void DAL_DisableDisplay( UINT32 p1 ); // p1 = 0
+
+/* Включить диспей */
+void DAL_EnableDisplay( UINT32 p1 ); // p1 = 0
+
+void DL_KeyUpdateKeypadBacklight( UINT8 P1 ); // P1 = 1 lighting; P2 = 0
+
+UINT32 UIS_SetBacklight( UINT8 P1 );
+
+// Регулировка яркости дисплея
+UINT32 UIS_SetBacklightWithIntensity( UINT8 color, // = 255 
+									  UINT8 intensity // = 0...6
+									); 
+
+
+
+/******************************
+   DbFeature
+******************************/
+
+#define ID_KEYPAD_LOCK_79              0x86A 
+#define ID_KEYPAD_LOCK_49              0x7F3 
+#define ID_WORKING_TABLE_49			   0x7F8
+#define ID_IMEI                        0x9CE
+
+// чтение 
+UINT8 DL_DbFeatureGetCurrentState( UINT16 fstate_ID, UINT8 *state );
+// запись 
+UINT8 DL_DbFeatureStoreState(UINT16 fstate_ID, UINT8 state);
+
+UINT8 DL_DbFeatureGetValueString(UINT32 feature_id, WCHAR *feature_string );
+
+/*************************
+  Симы
+*************************/
+
+typedef struct {
+  UINT16   seem_element_id;
+  UINT16   seem_record_number;
+  UINT32   seem_offset;
+  UINT32   seem_size;
+} SEEM_ELEMENT_DATA_CONTROL_T; 
+
+
+// чтение из сима
+UINT16   SEEM_ELEMENT_DATA_read 	( 	SEEM_ELEMENT_DATA_CONTROL_T  *data_ctrl_ptr, // указатель на структуру данных, содержащую информацию о запросе
+										UINT8  *data_buf, // указатель на буфер, куда прочитаются данные
+										BOOL read_zero_byte_allowed  // если true, то можно читать маленькие симы, длина которых меньше 255
+									);
+
+//  запись в сим												
+UINT16  SEEM_ELEMENT_DATA_write	(  	SEEM_ELEMENT_DATA_CONTROL_T  *data_ctrl_ptr,
+									UINT8  *seem_data_ptr // указатель на буфер, где хранятся записываемые данные
+								);	
+													
+/* Читает в буфер seem_data count байт сима seem, записи record
+	Перед чтением ОБЯЗАТЕЛЬНО выделить не менее count байт памяти! */
+UINT32 SEEM_FDI_OUTSIDE_SEEM_ACCESS_read( UINT32 seem,  UINT32 record,  void* seem_data,  UINT32 count );
+
+/* Записывает из буфера seem_data count байт в сим seem, запись record
+	Не проверено */
+#define SEEM_WRITE_METHOD_ADD				0
+#define SEEM_WRITE_METHOD_UPDATE			1
+UINT32 SEEM_FDI_OUTSIDE_SEEM_ACCESS_write( UINT32 method,  UINT32 seem,  UINT32 record,  void* seem_data,  UINT32 count );
+													
+													
+/****************************
+  Питание 
+*****************************/													
+/* Функция ребута */
+void HAPI_WATCHDOG_soft_reset( void );
+
+/* Функция выключения */
+void pu_main_powerdown(UINT32 r0);
+
+
+/****************************
+  Громкость 
+****************************/
+
+enum // volume_type
+{
+    BASE = 0,	// громкость звонка
+
+    PHONE, // громкость клавиатуры
+    VOICE, // громкость мультимедия  LTE
+    MICROPHONE, // громкость разговора
+    MULTIMEDIA, //  громкость мультимедия LTE2 и V3i
+    PTT_TONES,
+    MUTABLE_MAX,
+    IMMUTABLE_MAX,
+    MAX = IMMUTABLE_MAX
+};
+
+// установить громкость
+void DL_AudSetVolumeSetting(UINT8 volume_type, UINT8 volume);
+// получить текущую громкость
+void DL_AudGetVolumeSetting(UINT8 volume_type, UINT8 *volume);
+
+
+/****************************
+  Звонки
+****************************/
+
+#define MAX_CALLS                   7
+
+typedef struct
+{       
+    UINT16            call_id;  
+    UINT8             call_state;
+} CALL_ID_T;
+
+typedef struct
+{
+    UINT8  		number_of_calls;
+    UINT8 		overall_call_state;
+    CALL_ID_T 	call_state_info[MAX_CALLS];
+} CALL_STATES_T;
+
+
+// если number_of_calls == 0, то вызовов нет
+void DL_SigCallGetCallStates(CALL_STATES_T *call_states);
+
+// TRUE - звонок (входящий/исходящий)
+BOOL APP_MMC_Util_IsVoiceCall(void); // если FALSE, то вызовов нет
+
+// TRUE - звонок (входящий/исходящий)
+BOOL APP_MMC_Util_IsVideoCall(void); // если FALSE, то вызовов нет
+
+/*******************************
+  Отправка сообщений 
+*******************************/
+
+typedef struct
+{
+	WCHAR  address[51];
+	UINT8  addr_type; // 0 -SMS, 1 - EMAIL, 2 - No, 3 - Long Msg ??? 
+	WCHAR  contents[512]; // максимальный размер 0x7BFE, только для SMS, думаю, это много
+} SEND_TEXT_MESSAGE_T;
+
+UINT32 DL_SigMsgSendTextMsgReq(IFACE_DATA_T *port, SEND_TEXT_MESSAGE_T *msg_ptr);
+
+/********************************
+  Метки
+*********************************/
+// непроверено !
+
+#define SC_TYPE_URL		5
+#define SC_TYPE_APP		6
+
+typedef UINT8 SC_TYPE_T;
+
+typedef struct
+{
+    UINT8            	seem_rec;    // seem_rec-1
+    UINT8				type;        // тип метки 
+    UINT8            	index;       // номер в списке, отсчет от 1. Номер метки
+    UINT8            	unk1;        // 0xFE
+    UINT32            	ev_code;
+    UINT32            	list_index;	 // id выделенного пункта списка
+    UINT32            	param1;       
+	UINT32            	list2_index; // тоже какой-то id пункта
+    UINT32            	param2;       
+    UINT32            	data;	     // используется для указателя на данные, например указатель на URL-адрес 
+    UINT32		        lang_text;   // RESOURCE_ID
+    WCHAR            	text[17];	 // имя метки
+    UINT16            	unk2;        // 0xffbd
+    
+} SEEM_0002_T;
+
+
+// создание метки									
+UINT8 DL_DbShortcutCreateRecord( IFACE_DATA_T  *data, SEEM_0002_T  record ); //10726BE4
+
+// обновление метки
+UINT8 DL_DbShortcutUpdateRecord( IFACE_DATA_T  *data, SEEM_0002_T  record ); //10726B4A
+
+// удаление метки
+UINT8 DL_DbShortcutDeleteRecord( IFACE_DATA_T  *data, UINT8 seem_rec); //10726B22
+
+// проверяет  recordId,   0 - no error
+UINT8 DL_DbShortcutGetRecordByRecordId( IFACE_DATA_T  *data, UINT8  seem_rec); //10726ACC
+
+// получает номер доступной записи
+UINT16 DL_DbShortcutGetNumOfRecordsAvailable( void ); //10726AF4
+
+// получает номер используемой записи
+UINT16 DL_DbShortcutGetNumOfRecordsUsed( BOOL voice_shortcut ); //10726AF8
+
+// получает первый доступный номер
+UINT8 DL_DbGetFirstAvailableNumber( void ); //10726B1E
+
+// получает номер используемой  записи URL
+UINT16 DL_DbShortcutGetNumOfURLRecordsUsed( void ); //10726C70
+
+// проверяет URLId,   0 - no error
+UINT32 DL_DbShortcutGetURLByURLId( IFACE_DATA_T *data, UINT32 URLId); //10726C74
+
+// получение типа записи
+SC_TYPE_T DL_DbShortcutGetshortcutType( UINT8 index ); //10726CCA
+
+// получает номер доступной записи URL
+UINT16 DL_DbShortcutGetNumOfURLRecordsAvailable( void ); //10726CD2
+
+
+/********************************
+  Прочее 
+********************************/
+
+// воспроизведение тона
+UINT32 DL_AudPlayTone( UINT32 tone,  UINT8 volume ); //Current volume = 0xFF
+
+// эмуляция клавиш
+void DL_KeyInjectKeyPress( UINT8 key_code, 
+						   UINT8 states, // 0 - Press; 1 - Release
+						   UINT8 p3 // = 0
+						  );
+
+// получение кодов
+UINT32 DL_DbSigNamGetSecurityCode(WCHAR *);
+UINT32 DL_DbSigNamGetUnlockCode(WCHAR *);
+
+// статус PIN
+enum {
+	SIMPIN_STATUS_SECURED = 2,	// Также без симки
+	SIMPIN_STATUS_NO_PIN,
+	SIMPIN_STATUS_INVALID
+};
+UINT8 DL_SimMgrGetPinStatus( UINT8 card );
+
+// сила сигнала сети
+typedef struct
+{
+    UINT8 	percent;
+    INT8    dbm;
+} SIGNAL_STRENGTH_T;
+
+void DL_SigRegQuerySignalStrength(SIGNAL_STRENGTH_T *signal_strength);
+
+
+// Cell Id
+void DL_SigRegGetCellID(UINT16 *cell_id);
+
+UINT8 DL_PwrGetActiveBatteryPercent( void );	// бесполезная ф-ция
+
+enum
+{
+    CHARGING_MODE_NONE = 0,
+    CHARGING_MODE_NORMAL = 1,
+    CHARGING_MODE_PC
+};
+
+UINT8 DL_PwrGetChargingMode( void );
+
+UINT32 SetFlashLight( UINT32 status );
+
+#endif
+
