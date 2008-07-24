@@ -24,7 +24,7 @@ Open the file and check the all functions have been found, if not you will have 
 
 = Porting ElfLoader Spawner =
 
-Copy newlib.sym and portkit into elf_loder_spawner\SDK and execute:
+Copy newlib.sym and portkit into elf_loader_spawner\SDK and execute:
 
   * {{{portkit.exe -fl old_library.def newlib.sym}}}
   * {{{php ./portkit.php -fl old_library.def newlib.sym}}}
@@ -45,7 +45,7 @@ SECTIONS
 }
 }}}
 
-Now go into elf_loder_spawner, compile the elf_loader_spawner and paste the content of "out.bin" at the address you wrote in linker.ld.
+Now go into elf_loader_spawner, compile the elf_loader_spawner and paste the content of "out.bin" at the address you wrote in linker.ld.
 
 Copy portkit into elf_loader_spawner and run:
 
@@ -53,7 +53,7 @@ Copy portkit into elf_loader_spawner and run:
 
 = Porting ElfLoader =
 
-As for the spawner copy newlib.sym and portkit into elfloder\SDK and execute:
+As for the spawner copy newlib.sym and portkit into elfloader\SDK and execute:
 
   * {{{portkit.exe -fl old_library.def newlib.sym}}}
   * {{{php ./portkit.php -fl old_library.def newlib.sym}}}
