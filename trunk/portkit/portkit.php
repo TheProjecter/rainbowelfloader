@@ -29,10 +29,11 @@ if( $argc <= 1 )
     echo "# ElfLoader port tool for V3x/E770/V1075/E1070\n";
     echo "# by flash.tato & theCor3\n";
     echo "Help:\n";
-    echo "\t-sh: build library.def from .h files <-sh>\n";
-    echo "\t-f:  build functions.pat <-f library.def functions.pat CG1.smg>\n";
+    echo "\t-sh: build library.def from .h files <-sh> (do not use)\n";
+    echo "\t-f:  build functions.pat <-f library.def functions.pat CG1.smg> (do not use)\n";
     echo "\t-sf: build library.def from functions.pat <-sf functions.pat CG1.smg>\n";
     echo "\t-fl: fixes ldr.bin headers with new addresses <-fl old_library.def new_library.def>\n";
+    echo "\t-install: to install the elf loader spwner <-install cg1.smg address_of_spwner>\n";
 }
 
 $already_in = array( );
@@ -69,6 +70,23 @@ if( $argv[ 1 ] == '-sh' )
 
     fwrite( $houtput, $output );
     fclose( $houtput );
+}
+elseif( $argv[ 1 ] == '-install' )
+{
+    $input = file_get_contents( "./" . $argv[ 2 ] );
+
+    $GPSNI_Register = "24709F00????????????????60136025????????60048F00666312452070";
+    
+    $address = find_bytes( $input, $GPSNI_Register, 0 ) + hexdec( "10040000" );
+
+    $a = pack( "H*", $argv[ 3 ] );
+    $b = pack( "H*", dechex( $address ) );
+
+    $input = str_replace( $b, $a, $input );
+
+    $oh = fopen( "./" . $argv[ 2 ], "w+" );
+    fwrite( $oh, $input );
+    fclose( $oh );
 }
 elseif( $argv[ 1 ] == '-fl' )
 {
