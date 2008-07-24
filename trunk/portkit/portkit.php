@@ -81,6 +81,9 @@ elseif( $argv[ 1 ] == '-install' )
 
     $a = pack( "H*", $argv[ 3 ] );
     $b = pack( "H*", dechex( $address ) );
+    
+    if( strpos( $input, $b, 0 ) === FALSE )
+        die( 'Cannot found GPSNI_Register this means i can\'t install the elfloader!\n' );
 
     $input = str_replace( $b, $a, $input );
 
