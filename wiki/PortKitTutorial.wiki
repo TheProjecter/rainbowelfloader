@@ -18,3 +18,7 @@ Now create a file called port.bat (on win) or port.sh (on linux) in this file wr
   * {{{php ./portkit.php -sf functions.pat CG1.smg}}} if you are in linux
 
 Then run the created file and a file named newlib.sym will be created.
+
+Open the file and check the all functions have been found, if not you will have to look for them.
+
+= Porting ElfLoader Spawner =
