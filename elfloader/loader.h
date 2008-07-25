@@ -64,6 +64,8 @@ UINT32 Run_Action( EVENT_STACK_T *ev_st,  void *app );
 UINT32 Del_Action( EVENT_STACK_T *ev_st,  void *app );
 UINT32 Select( EVENT_STACK_T *ev_st,  void *app);
 
+UINT32 AutRun_Action( EVENT_STACK_T *ev_st,  void *app );
+
 UINT32 FindAppS(void);
 UINT32 Fullname2Name(void);
 void LoadElf( WCHAR *, UINT32 );
