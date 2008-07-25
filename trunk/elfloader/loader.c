@@ -82,6 +82,7 @@ EVENT_HANDLER_ENTRY_T main_state_handlers[] =
     { EVENT_RUN,                    Run_Action    },
     { EVENT_DEL,                    Del_Action    },
     { EVENT_ABOUT,                  About_Action  },
+    { EVENT_AUTORUN,                AutRun_Action },
     { EV_DONE,                      AppLoaderExit },
     { STATE_HANDLERS_END,           NULL          },
 };
@@ -414,6 +415,34 @@ UINT32 About_Action( EVENT_STACK_T *ev_st,  void *app )
 
 	return RESULT_OK;
 }
+
+UINT32 AutRun_Action( EVENT_STACK_T *ev_st,  void *app )
+{
+    EVENT_T     *event = AFW_GetEv(ev_st);
+	APP_ConsumeEv( ev_st, app );
+
+    if( SelectedElf > 0 ) --SelectedElf;
+    
+    WCHAR startupcfg[] =  {'f', 'i', 'l', 'e', ':', '/', '/', 'a', '/', 's', 't', 'a', 'r', 't', 'u', 'p', '.', 'c', 'f', 'g', 0};
+    FILE_HANDLE_T   f;
+    UINT32 w;
+    char buffer[ 128 ];
+
+    f = DL_FsOpenFile( startupcfg, FILE_APPEND_PLUS_MODE, NULL );
+    
+    if( f == FILE_HANDLE_INVALID )
+        return RESULT_FAIL;
+
+    u_utoa( fname[ SelectedElf ] . u_fullname, buffer );
+    strcat( buffer, "\n" );
+
+    DL_FsWriteFile( buffer, strlen( buffer ), 1, f, &w );
+    
+    DL_FsCloseFile( f );
+
+	return RESULT_OK;
+}
+
 
 UINT32 Run_Action( EVENT_STACK_T *ev_st,  void *app )
 {
