@@ -52,6 +52,7 @@ typedef struct
     char       fullname[256];
     WCHAR       u_fullname[ 512 ];
     BOOL        selected;
+    BOOL        in_autorun;
     int         Id;
 } FILEINFO;
 
