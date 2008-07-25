@@ -307,7 +307,7 @@ UINT32 SendListItems( EVENT_STACK_T *ev_st,  void *app, UINT32 start, UINT32 num
 		plist[index].editable = FALSE;
 		plist[index].content.static_entry.unk6 = 1;
 
-        if( InAutorun( fname[ i - 1 ] . u_fullname ) )
+        if( fname[ i - 1 ].in_autorun )
             UIS_MakeContentFromString( "p1q0Sp2", &( plist[index].content.static_entry.text ), fname[ i - 1 ].name, Resources[RES_ICON], Resources[RES_AUTORUN] );
         else
             UIS_MakeContentFromString( "p1q0", &( plist[index].content.static_entry.text ), fname[ i - 1 ].name, Resources[RES_ICON] );
@@ -430,6 +430,8 @@ UINT32 AutRun_Action( EVENT_STACK_T *ev_st,  void *app )
 
     if( SelectedElf > 0 ) --SelectedElf;
     
+    if( fname[ SelectedElf ] . in_autorun ) return -2; //already in autorun | TO-DO: remove form autorun
+    
     FILE_HANDLE_T   f;
     UINT32 w;
 
@@ -497,8 +499,6 @@ UINT32 AutRun_Action( EVENT_STACK_T *ev_st,  void *app )
 
     off = sizeof( AUTORUN_Header ) + sizeof( AUTORUN_Entry ) * i;
     memcpy( ( void * )rbuffer + off, &Entry, sizeof( AUTORUN_Entry ) );
-
-    //PFprintf( "Adding to autorun, %x\n", alloc_size );
 
     DL_FsFSeekFile( f, 0, SEEK_WHENCE_SET );
     DL_FsWriteFile( rbuffer, alloc_size, 1, f, &w );
@@ -611,6 +611,7 @@ UINT32 FindAppS(void)
         u_strcat( fname[i].u_fullname, fs_result.name );
         strcat(fname[i].fullname, uri);
         
+        fname[i].in_autorun = InAutorun( fname[i].u_fullname );
         fname[i].selected = FALSE;
         fname[i].Id = id++;
     }
