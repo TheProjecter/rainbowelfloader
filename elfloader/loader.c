@@ -57,6 +57,8 @@ typedef int ( * ELF_ENTRY)( ElfLoaderApp );
 
 const char app_name[APP_NAME_LEN] = "ElfLoader"; 
 
+WCHAR startupcfg[] =  {'f', 'i', 'l', 'e', ':', '/', '/', 'a', '/', 's', 't', 'a', 'r', 't', 'u', 'p', '.', 'c', 'f', 'g', 0};
+
 ElfLoaderApp ** ElfStack = NULL;
 
 int elfs = 0;
@@ -305,7 +307,10 @@ UINT32 SendListItems( EVENT_STACK_T *ev_st,  void *app, UINT32 start, UINT32 num
 		plist[index].editable = FALSE;
 		plist[index].content.static_entry.unk6 = 1;
 
-		UIS_MakeContentFromString( "p1q0", &( plist[index].content.static_entry.text ), fname[ i - 1 ].name, Resources[RES_ICON] );
+        if( InAutorun( fname[ i - 1 ] . u_fullname ) )
+            UIS_MakeContentFromString( "p1q0Sp2", &( plist[index].content.static_entry.text ), fname[ i - 1 ].name, Resources[RES_ICON], Resources[RES_AUTORUN] );
+        else
+            UIS_MakeContentFromString( "p1q0", &( plist[index].content.static_entry.text ), fname[ i - 1 ].name, Resources[RES_ICON] );
 	}
 
 	status = APP_UtilAddEvUISListData( ev_st, app, 0,
@@ -346,6 +351,8 @@ UINT32 InitResources( )
     status = DRM_CreateResource( &Resources[RES_LABEL4], RES_TYPE_STRING, ( void * )autorun, ( u_strlen( autorun ) + 1 ) * sizeof( WCHAR ) );
 
     status = DRM_CreateResource( &Resources[RES_ICON], RES_TYPE_GRAPHICS, ( void * )ICON, sizeof( ICON ) );
+    
+    status = DRM_CreateResource( &Resources[RES_AUTORUN], RES_TYPE_GRAPHICS, ( void * )AUTORUN, sizeof( AUTORUN ) );
 	if( status!=RESULT_OK ) return status;
 
     action[0].softkey_label = 0;
@@ -423,20 +430,78 @@ UINT32 AutRun_Action( EVENT_STACK_T *ev_st,  void *app )
 
     if( SelectedElf > 0 ) --SelectedElf;
     
-    WCHAR startupcfg[] =  {'f', 'i', 'l', 'e', ':', '/', '/', 'a', '/', 's', 't', 'a', 'r', 't', 'u', 'p', '.', 'c', 'f', 'g', 0};
     FILE_HANDLE_T   f;
     UINT32 w;
-    char buffer[ 128 ];
 
-    f = DL_FsOpenFile( startupcfg, FILE_APPEND_PLUS_MODE, NULL );
+    f = DL_FsOpenFile( startupcfg, FILE_READ_PLUS_MODE, NULL );
     
+    char * rbuffer;
+    UINT32 filesize;
+    UINT32 alloc_size;
+
     if( f == FILE_HANDLE_INVALID )
-        return RESULT_FAIL;
+    {
+        f = DL_FsOpenFile( startupcfg, FILE_WRITE_PLUS_MODE, NULL );
+        filesize = 0;
+    }
+    else
+        filesize = DL_FsGetFileSize( f );
 
-    u_utoa( fname[ SelectedElf ] . u_fullname, buffer );
-    strcat( buffer, "\n" );
+    if( filesize <= 0 )
+    {
+        rbuffer = ( char * )suAllocMem( sizeof( AUTORUN_Header ) + sizeof( AUTORUN_Entry ), NULL );
+        alloc_size = sizeof( AUTORUN_Header ) + sizeof( AUTORUN_Entry );
+    }
+    else
+    {
+        rbuffer = ( char * )suAllocMem( filesize + sizeof( AUTORUN_Entry ), NULL );
+        alloc_size = filesize + sizeof( AUTORUN_Entry );
+    }
+    
+    DL_FsReadFile( rbuffer, filesize, 1, f, &w );
+        
+    AUTORUN_Header Head;
 
-    DL_FsWriteFile( buffer, strlen( buffer ), 1, f, &w );
+    if( filesize <= 0 )
+    {
+        filesize += sizeof( AUTORUN_Header );
+        memset( ( void * )&Head, 0, sizeof( AUTORUN_Header ) );
+    }
+    else
+    {
+        DL_FsFSeekFile( f, 0, SEEK_WHENCE_SET );
+        DL_FsReadFile( &Head, sizeof( AUTORUN_Header ), 1, f, &w );
+    }
+
+    Head . Elements += 1;
+    
+    memcpy( rbuffer, &Head, sizeof( AUTORUN_Header ) );
+    
+    AUTORUN_Entry Entry;
+    
+    int i, off;
+    
+    for( i = 0; i < Head . Elements - 1; i++ )
+    {
+        off = sizeof( AUTORUN_Header ) + sizeof( AUTORUN_Entry ) * i;
+        
+        if( filesize > 0 )
+            DL_FsReadFile( &Entry, sizeof( AUTORUN_Entry ), 1, f, &w );
+            
+        memcpy( ( void * )rbuffer + off, &Entry, sizeof( AUTORUN_Entry ) );
+    }
+
+    memset( ( void * )&Entry, 0, sizeof( AUTORUN_Entry ) );
+    u_strcpy( Entry . ElfPath, fname[ SelectedElf ] . u_fullname );
+    Entry . Event_Code = 0;
+
+    off = sizeof( AUTORUN_Header ) + sizeof( AUTORUN_Entry ) * i;
+    memcpy( ( void * )rbuffer + off, &Entry, sizeof( AUTORUN_Entry ) );
+
+    //PFprintf( "Adding to autorun, %x\n", alloc_size );
+
+    DL_FsFSeekFile( f, 0, SEEK_WHENCE_SET );
+    DL_FsWriteFile( rbuffer, alloc_size, 1, f, &w );
     
     DL_FsCloseFile( f );
 
@@ -648,7 +713,7 @@ UINT32 LoaderEndApp( ElfLoaderApp * eapp )
 
 UINT32 EvCode = 0xA000; //Base evcode for our elfs
 
-void LoadElf( WCHAR * FileName, UINT32 Id )
+void LoadElf( WCHAR * FileName, UINT32 EvCode_Override )
 {
 	FILE_HANDLE_T Elf;
 	BYTE * ElfImage;
@@ -689,11 +754,17 @@ void LoadElf( WCHAR * FileName, UINT32 Id )
 	if( eapp . textptr != NULL &&
         eapp . dataptr != NULL )
     {
-        eapp . evcode = EvCode;
+        if( EvCode_Override > 0 )
+            eapp . evcode = EvCode_Override;
+        else
+        {
+            eapp . evcode = EvCode;
+            ++EvCode;
+        }
+        
         eapp . pid = elfs++;
         ElfStack[ eapp . pid ] = &eapp;
         ( ( ELF_ENTRY )Entry )( eapp );
-        EvCode += 1;
     }
     
 	suFreeMem( ElfImage );
@@ -1082,17 +1153,57 @@ INT ExternalSymbolLookup( char * SymbolName, unsigned * Address )
 	return 1;
 }
 
+int InAutorun( WCHAR * Elf )
+{
+    UINT32 filesize;
+    UINT32 r;
+    FILE_HANDLE_T   f;
+
+    f = DL_FsOpenFile( startupcfg, FILE_READ_MODE, NULL );
+    
+    if( f == FILE_HANDLE_INVALID )
+        return 0;
+    
+    filesize = DL_FsGetFileSize( f );
+    
+    if( filesize <= 0 )
+    {
+        DL_FsCloseFile( f );
+        return 0;
+    }
+
+    AUTORUN_Header Head;
+    AUTORUN_Entry  Entry;
+
+    DL_FsReadFile( &Head,
+                   sizeof( AUTORUN_Header ),
+                   1,
+                   f,
+                   &r );
+
+    int i;
+    for( i = 0; i < Head . Elements; i++ )
+    {
+        DL_FsReadFile( &Entry,
+               sizeof( AUTORUN_Entry ),
+               1,
+               f,
+               &r );
+
+        if( !u_strcmp( Entry . ElfPath, Elf ) )
+            return 1;
+    }
+
+    return 0;
+}
+
 void DoAutorun( )
 {
-    WCHAR startupcfg[] =  {'f', 'i', 'l', 'e', ':', '/', '/', 'a', '/', 's', 't', 'a', 'r', 't', 'u', 'p', '.', 'c', 'f', 'g', 0};
     UINT32 filesize;
     UINT32 r;
     FILE_HANDLE_T   f;
     char * buffer;
-    char ** elfs;
-    
-    int rows = 0;
-    
+
     f = DL_FsOpenFile( startupcfg, FILE_READ_MODE, NULL );
     
     if( f == FILE_HANDLE_INVALID )
@@ -1110,30 +1221,21 @@ void DoAutorun( )
     DL_FsReadFile( buffer, filesize, 1, f, &r );
     DL_FsCloseFile( f );
     
+    AUTORUN_Header * Head;
+    AUTORUN_Entry  * Entry;
+    Head = ( AUTORUN_Header * )buffer;
+    
+    *buffer += sizeof( AUTORUN_Header );
+    
     int i;
-    for( i = 0; i < filesize; i++ )
-        if( buffer[ i ] == 0x0A ) rows++;
-    
-    if( rows <= 0 ) return;
-    
-    elfs = ( char ** )suAllocMem( ( rows + 1 ) * 64, NULL );
-    
-    split( buffer, elfs, rows, "\n" );
-    
-    WCHAR welf[128];
-    
-    for( i = 0; i < rows; i++ )
+    for( i = 0; i < Head -> Elements; i++ )
     {
-        int j;
-        for( j = 0; j < strlen( elfs[i] ); j++ )
-            if( elfs[i][j] == '\n' || elfs[i][j] == '\r' ) elfs[i][j] = 0;
-            
-        u_atou( elfs[i], welf );
-        if( DL_FsFFileExist( welf ) )
-            LoadElf( welf, 0 );
+        Entry = ( AUTORUN_Entry * )buffer;
+        LoadElf( Entry -> ElfPath, Entry -> Event_Code );
+        *buffer += sizeof( AUTORUN_Entry );
     }
-    
-    suFreeMem( elfs );
+  
+    suFreeMem( buffer );
 }
 
 //found somewhere in the web
