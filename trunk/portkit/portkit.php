@@ -204,7 +204,7 @@ elseif( $argv[ 1 ] == '-sf' )
         
         if( $faddr > 1 )
         {
-            printf( "%s at %X\n", $data[ 0 ], $faddr + hexdec( "10040000" ) );
+            printf( "%s at %X\n", $data[ 0 ], $faddr + hexdec( "10040000" ) + $addr_add );
             $_functions_db[ $data[ 0 ] ] = $faddr + $addr_add;
             fwrite( $newlib, sprintf( "%s = %x\n", $data[ 0 ], $faddr + hexdec( "10040000" ) + $addr_add ) );
         }
