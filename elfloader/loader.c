@@ -307,7 +307,7 @@ UINT32 SendListItems( EVENT_STACK_T *ev_st,  void *app, UINT32 start, UINT32 num
 		plist[index].editable = FALSE;
 		plist[index].content.static_entry.unk6 = 1;
 
-        if( fname[ i - 1 ].in_autorun )
+        if( fname[ i - 1 ].in_autorun > 0 )
             UIS_MakeContentFromString( "p1q0Sp2", &( plist[index].content.static_entry.text ), fname[ i - 1 ].name, Resources[RES_ICON], Resources[RES_AUTORUN] );
         else
             UIS_MakeContentFromString( "p1q0", &( plist[index].content.static_entry.text ), fname[ i - 1 ].name, Resources[RES_ICON] );
@@ -337,7 +337,7 @@ UINT32 InitResources( )
 	WCHAR list_caption[] = { 'E', 'l', 'f', 'L', 'o', 'a', 'd', 'e', 'r', 0 };
 	WCHAR   run[]   = { 'R', 'u', 'n', 0 };
 	WCHAR delete[] = { 'D', 'e', 'l', 'e', 't', 'e', 0 };
-	WCHAR autorun[] = { 'A', 'd', 'd', ' ', 't', 'o', ' ', 'a', 'u', 't', 'o', 'r', 'u', 'n', 0 }; //To-Do
+	WCHAR autorun[] = { 'A', 'd', 'd', '/', 'R', 'e', 'm', 'o', 'v', 'e', ' ', 'a', 'u', 't', 'o', 'r', 'u', 'n', 0 };
 	WCHAR about[]   = { 'A', 'b', 'o', 'u', 't', 0 };
 
     status = DRM_CreateResource( &Resources[RES_LIST_CAPTION], RES_TYPE_STRING, (void*)list_caption, (u_strlen(list_caption)+1)*sizeof(WCHAR) );
@@ -429,9 +429,7 @@ UINT32 AutRun_Action( EVENT_STACK_T *ev_st,  void *app )
 	APP_ConsumeEv( ev_st, app );
 
     if( SelectedElf > 0 ) --SelectedElf;
-    
-    if( fname[ SelectedElf ] . in_autorun ) return -2; //already in autorun | TO-DO: remove form autorun
-    
+
     FILE_HANDLE_T   f;
     UINT32 w;
 
@@ -440,7 +438,10 @@ UINT32 AutRun_Action( EVENT_STACK_T *ev_st,  void *app )
     char * rbuffer;
     UINT32 filesize;
     UINT32 alloc_size;
-
+    AUTORUN_Header Head;
+    AUTORUN_Entry Entry;
+    int i, off;
+    
     if( f == FILE_HANDLE_INVALID )
     {
         f = DL_FsOpenFile( startupcfg, FILE_WRITE_PLUS_MODE, NULL );
@@ -448,62 +449,100 @@ UINT32 AutRun_Action( EVENT_STACK_T *ev_st,  void *app )
     }
     else
         filesize = DL_FsGetFileSize( f );
-
-    if( filesize <= 0 )
-    {
-        rbuffer = ( char * )suAllocMem( sizeof( AUTORUN_Header ) + sizeof( AUTORUN_Entry ), NULL );
-        alloc_size = sizeof( AUTORUN_Header ) + sizeof( AUTORUN_Entry );
-    }
-    else
-    {
-        rbuffer = ( char * )suAllocMem( filesize + sizeof( AUTORUN_Entry ), NULL );
-        alloc_size = filesize + sizeof( AUTORUN_Entry );
-    }
     
-    DL_FsReadFile( rbuffer, filesize, 1, f, &w );
+    if( fname[ SelectedElf ] . in_autorun > 0 )
+    {
+        UINT32 element = fname[ SelectedElf ] . in_autorun - 1;
         
-    AUTORUN_Header Head;
-
-    if( filesize <= 0 )
-    {
-        filesize += sizeof( AUTORUN_Header );
-        memset( ( void * )&Head, 0, sizeof( AUTORUN_Header ) );
-    }
-    else
-    {
+        rbuffer = ( char * )suAllocMem( filesize, NULL );
+        
+        DL_FsReadFile( rbuffer, filesize, 1, f, &w );
         DL_FsFSeekFile( f, 0, SEEK_WHENCE_SET );
         DL_FsReadFile( &Head, sizeof( AUTORUN_Header ), 1, f, &w );
-    }
-
-    Head . Elements += 1;
-    
-    memcpy( rbuffer, &Head, sizeof( AUTORUN_Header ) );
-    
-    AUTORUN_Entry Entry;
-    
-    int i, off;
-    
-    for( i = 0; i < Head . Elements - 1; i++ )
-    {
-        off = sizeof( AUTORUN_Header ) + sizeof( AUTORUN_Entry ) * i;
         
-        if( filesize > 0 )
-            DL_FsReadFile( &Entry, sizeof( AUTORUN_Entry ), 1, f, &w );
+        --Head . Elements;
+        
+        memcpy( rbuffer, &Head, sizeof( AUTORUN_Header ) );
+        
+        int j = 0;
+        for( i = 0; i < Head . Elements + 1; i++ )
+        {
+            if( i == element ) continue;
             
+            off = sizeof( AUTORUN_Header ) + sizeof( AUTORUN_Entry ) * j;
+
+            DL_FsReadFile( &Entry, sizeof( AUTORUN_Entry ), 1, f, &w );
+                
+            memcpy( ( void * )rbuffer + off, &Entry, sizeof( AUTORUN_Entry ) );
+            ++j;
+        }
+        
+        alloc_size = sizeof( AUTORUN_Header ) + sizeof( AUTORUN_Entry ) * j;
+        
+        DL_FsCloseFile( f );
+        
+        f = DL_FsOpenFile( startupcfg, FILE_WRITE_PLUS_MODE, NULL );
+        
+        DL_FsWriteFile( rbuffer, alloc_size, 1, f, &w );
+        DL_FsCloseFile( f );
+    }
+    else
+    {
+        if( filesize <= 0 )
+        {
+            rbuffer = ( char * )suAllocMem( sizeof( AUTORUN_Header ) + sizeof( AUTORUN_Entry ), NULL );
+            alloc_size = sizeof( AUTORUN_Header ) + sizeof( AUTORUN_Entry );
+        }
+        else
+        {
+            rbuffer = ( char * )suAllocMem( filesize + sizeof( AUTORUN_Entry ), NULL );
+            alloc_size = filesize + sizeof( AUTORUN_Entry );
+        }
+        
+        DL_FsReadFile( rbuffer, filesize, 1, f, &w );
+
+        if( filesize <= 0 )
+        {
+            filesize += sizeof( AUTORUN_Header );
+            memset( ( void * )&Head, 0, sizeof( AUTORUN_Header ) );
+        }
+        else
+        {
+            DL_FsFSeekFile( f, 0, SEEK_WHENCE_SET );
+            DL_FsReadFile( &Head, sizeof( AUTORUN_Header ), 1, f, &w );
+        }
+
+        Head . Elements += 1;
+        
+        memcpy( rbuffer, &Head, sizeof( AUTORUN_Header ) );
+
+        for( i = 0; i < Head . Elements - 1; i++ )
+        {
+            off = sizeof( AUTORUN_Header ) + sizeof( AUTORUN_Entry ) * i;
+            
+            if( filesize > 0 )
+                DL_FsReadFile( &Entry, sizeof( AUTORUN_Entry ), 1, f, &w );
+                
+            memcpy( ( void * )rbuffer + off, &Entry, sizeof( AUTORUN_Entry ) );
+        }
+
+        memset( ( void * )&Entry, 0, sizeof( AUTORUN_Entry ) );
+        u_strcpy( Entry . ElfPath, fname[ SelectedElf ] . u_fullname );
+        Entry . Event_Code = 0;
+
+        off = sizeof( AUTORUN_Header ) + sizeof( AUTORUN_Entry ) * i;
         memcpy( ( void * )rbuffer + off, &Entry, sizeof( AUTORUN_Entry ) );
+            
+        DL_FsFSeekFile( f, 0, SEEK_WHENCE_SET );
+        DL_FsWriteFile( rbuffer, alloc_size, 1, f, &w );
+        
+        DL_FsCloseFile( f );
+
     }
 
-    memset( ( void * )&Entry, 0, sizeof( AUTORUN_Entry ) );
-    u_strcpy( Entry . ElfPath, fname[ SelectedElf ] . u_fullname );
-    Entry . Event_Code = 0;
+    suFreeMem( rbuffer );
 
-    off = sizeof( AUTORUN_Header ) + sizeof( AUTORUN_Entry ) * i;
-    memcpy( ( void * )rbuffer + off, &Entry, sizeof( AUTORUN_Entry ) );
-
-    DL_FsFSeekFile( f, 0, SEEK_WHENCE_SET );
-    DL_FsWriteFile( rbuffer, alloc_size, 1, f, &w );
-    
-    DL_FsCloseFile( f );
+    Update( ev_st, app, SelectedElf + 1 );
 
 	return RESULT_OK;
 }
@@ -1192,7 +1231,7 @@ int InAutorun( WCHAR * Elf )
                &r );
 
         if( !u_strcmp( Entry . ElfPath, Elf ) )
-            return 1;
+            return i + 1;
     }
 
     return 0;
@@ -1203,7 +1242,6 @@ void DoAutorun( )
     UINT32 filesize;
     UINT32 r;
     FILE_HANDLE_T   f;
-    char * buffer;
 
     f = DL_FsOpenFile( startupcfg, FILE_READ_MODE, NULL );
     
@@ -1217,26 +1255,22 @@ void DoAutorun( )
         DL_FsCloseFile( f );
         return;
     }
+
+    AUTORUN_Header Head;
+    AUTORUN_Entry  Entry;
     
-    buffer = ( char * )suAllocMem( filesize, NULL );
-    DL_FsReadFile( buffer, filesize, 1, f, &r );
-    DL_FsCloseFile( f );
-    
-    AUTORUN_Header * Head;
-    AUTORUN_Entry  * Entry;
-    Head = ( AUTORUN_Header * )buffer;
-    
-    *buffer += sizeof( AUTORUN_Header );
-    
+    DL_FsReadFile( &Head, sizeof( AUTORUN_Header ), 1, f, &r );
+
     int i;
-    for( i = 0; i < Head -> Elements; i++ )
+    for( i = 0; i < Head . Elements; i++ )
     {
-        Entry = ( AUTORUN_Entry * )buffer;
-        LoadElf( Entry -> ElfPath, Entry -> Event_Code );
-        *buffer += sizeof( AUTORUN_Entry );
+        DL_FsReadFile( &Entry, sizeof( AUTORUN_Entry ), 1, f, &r );
+        
+        if( DL_FsFFileExist( Entry . ElfPath ) )
+            LoadElf( Entry . ElfPath, Entry . Event_Code );
     }
-  
-    suFreeMem( buffer );
+    
+    DL_FsCloseFile( f );
 }
 
 //found somewhere in the web
