@@ -358,10 +358,7 @@ typedef struct
 // установить картинку на рабочий стол
 UINT32 UIS_SetWallpaper(SETWALLPAPER_SETTINGS_T * );  
 
-UIS_DIALOG_T uis_get_active_dialog( void )
-{
-    return ( ( UIS_DIALOG_T * )0x08A0C1B0 )[ 0 ];
-}
+UIS_DIALOG_T uis_get_active_dialog( void );
 
 UINT32 UIS_SetBacklight( UINT8 P1 );
 
