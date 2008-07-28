@@ -134,6 +134,7 @@ int beginning( )
                            HW_STATE_MAX, 
                            (void*)AppLoaderStart ); 
 
+    ElfStack = ( ElfLoaderApp ** )suAllocMem( sizeof( ElfLoaderApp ) * 128, NULL );
         
     LoadSymbolDB( ); //Loads firmware symbols database
     DoAutorun( );    //Autorun function
@@ -148,8 +149,6 @@ UINT32 AppLoaderStart( EVENT_STACK_T *ev_st,  REG_ID_T reg_id,  UINT32 param2 )
 
     if( AFW_InquireRoutingStackByRegId( reg_id ) == RESULT_OK )
         return RESULT_FAIL;
-
-    ElfStack = ( ElfLoaderApp ** )suAllocMem( sizeof( ElfLoaderApp ) * 128, NULL );
 
     app = (APP_APPLOADER_T*)APP_InitAppData( (void *)APP_HandleEvent,
                                               sizeof(APP_APPLOADER_T),
@@ -1070,6 +1069,7 @@ ElfLoaderApp ParseElf( BYTE * ElfImage, UINT32 Size )
 			if( Error != 0 )
 			{
                 suFreeMem( ElfApp . textptr );
+                ElfApp . textptr = NULL;
                 suFreeMem( ElfApp . dataptr );
 				return ElfApp;
             }
@@ -1267,7 +1267,9 @@ void DoAutorun( )
         DL_FsReadFile( &Entry, sizeof( AUTORUN_Entry ), 1, f, &r );
         
         if( DL_FsFFileExist( Entry . ElfPath ) )
+        {
             LoadElf( Entry . ElfPath, Entry . Event_Code );
+        }
     }
     
     DL_FsCloseFile( f );
