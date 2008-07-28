@@ -1,4 +1,4 @@
-INPUT("loader.o")
+INPUT(loader.o functions.elf)
 OUTPUT_FORMAT("binary")
 OUTPUT_ARCH(mcore)
 ENTRY(_main)

@@ -1,4 +1,4 @@
-INPUT("main.o")
+INPUT(main.o functions.elf)
 OUTPUT_FORMAT("binary")
 ENTRY(_main)
 SECTIONS

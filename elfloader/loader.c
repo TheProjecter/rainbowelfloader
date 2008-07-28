@@ -135,8 +135,8 @@ int beginning( )
                            (void*)AppLoaderStart ); 
 
         
-    LoadSymbolDB( ); //Loads firmware symbols database
-    DoAutorun( );    //Autorun function
+    //LoadSymbolDB( ); //Loads firmware symbols database
+    //DoAutorun( );    //Autorun function
 
     return status;
 }

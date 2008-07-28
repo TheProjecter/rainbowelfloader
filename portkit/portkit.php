@@ -32,7 +32,7 @@ if( $argc <= 1 )
     echo "\t-sh: build library.def from .h files <-sh> (do not use)\n";
     echo "\t-f:  build functions.pat <-f library.def functions.pat CG1.smg> (do not use)\n";
     echo "\t-sf: build library.def from functions.pat <-sf functions.pat CG1.smg>\n";
-    echo "\t-fl: fixes ldr.bin headers with new addresses <-fl old_library.def new_library.def>\n";
+    echo "\t-fl: fixes ldr.bin headers with new addresses <-fl new_library.def>\n";
     echo "\t-install: to install the elf loader spwner <-install cg1.smg address_of_spwner>\n";
 }
 
@@ -93,39 +93,23 @@ elseif( $argv[ 1 ] == '-install' )
 }
 elseif( $argv[ 1 ] == '-fl' )
 {
-    $h = opendir( "./" );
-
     $output = "";
 
-    $olib = file_get_contents( "./" . $argv[ 2 ] );
-    $nlib = file_get_contents( "./" . $argv[ 3 ] );
+    $nlib = file_get_contents( "./" . $argv[ 2 ] );
 
-    preg_match_all("#([a-zA-Z0-9_]+)\s*\=\s*([A-Fa-f0-9]*)#s", $olib, $odefs, PREG_SET_ORDER );
     preg_match_all("#([a-zA-Z0-9_]+)\s*\=\s*([A-Fa-f0-9]*)#s", $nlib, $ndefs, PREG_SET_ORDER );
 
-    while( $file = readdir( $h ) )
+    for( $i = 0; $i < count( $ndefs ); $i++ )
     {
-        if( $file == '.' ||
-            $file == '..' ||
-            substr( $file, strlen( $file ) - 2, 2 ) != '.h' ||
-            is_dir( $file ) ) continue;
-            
-        $file_content = file_get_contents( "./" . $file );
-
-        for( $i = 0; $i < count( $odefs ); $i++ )
-        {
-            $w = 0;
-            while( ( $odefs[ $i ][ 1 ] != $ndefs[ $w ][ 1 ] ) && $w < 600 ) $w++;
-            if( $odefs[ $i ][ 1 ] != $ndefs[ $w ][ 1 ] ) continue;
-            
-            echo "Replacing " . $odefs[ $i ][ 2 ] . " with " . $ndefs[ $w ][ 2 ] . "\n";
-            $file_content = str_replace( strtoupper( $odefs[ $i ][ 2 ] ), strtoupper( $ndefs[ $w ][ 2 ] ), $file_content );
-        }
-        
-        $oh = fopen( "./" . $file, "w+" );
-        fwrite( $oh, $file_content );
-        fclose( $oh );
+        $output .= "\t.equ " . $ndefs[ $i ][ 1 ] . ", 0x" . $ndefs[ $i ][ 2 ] . "\n";
+        $output .= "\t.export " . $ndefs[ $i ][ 1 ] . "\n";
     }
+    
+    $output .= "\n";
+    
+    $oh = fopen( "./functions.asm", "w+" );
+    fwrite( $oh, $output );
+    fclose( $oh );
 }
 elseif( $argv[ 1 ] == '-f' )
 {
