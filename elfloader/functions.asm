@@ -332,6 +332,8 @@
 	.export uisFreeMemory
 	.equ UIS_SetBacklight, 0x108C5CD6
 	.export UIS_SetBacklight
+	.equ UIS_SetLanguage, 0x108C5DAC
+	.export UIS_SetLanguage
 	.equ u_atou, 0x108D5EB0
 	.export u_atou
 	.equ u_strcpy, 0x108D4C6A

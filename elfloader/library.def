@@ -162,6 +162,7 @@ UIS_CreateProgressBar=108C3ADC
 UIS_SetStatus=108C5EF6
 UIS_GetCurrentStatusValue=108C5FD0
 UIS_SetWallpaper=108C6232
+UIS_SetLanguage=108C5DAC
 uisAllocateMemory=1086D4D8
 uisFreeMemory=1086DA6C
 UIS_SetBacklight=108C5CD6
