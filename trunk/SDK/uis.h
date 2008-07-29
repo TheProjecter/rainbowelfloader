@@ -79,8 +79,9 @@ typedef struct
 
 /**************************
  Вспомогательные функции
-************************* */      
-      
+************************* */     
+UINT32 UIS_SetLanguage(UINT8 LGID);
+
 /* Создаёт контент */
 UINT32 UIS_MakeContentFromString( char *format,  CONTENT_T *dst,  ... );
 /* More information about the string format: 

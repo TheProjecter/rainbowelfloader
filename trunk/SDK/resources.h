@@ -57,6 +57,7 @@ typedef struct
 
 // получаем текущий язык
 UINT8 DRM_GetCurrentLanguage(UINT8 * LGID);
+
 /*
 LGID:
 04 Chinese Complex 
