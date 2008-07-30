@@ -261,17 +261,8 @@ UINT32 Update( EVENT_STACK_T *ev_st,  void *app, UINT32 sItem )
 
 }
 
-typedef UINT32 ( *f_UIS_CreateIconicMenu )( SU_PORT_T *port, void *, RESOURCE_ID *, UINT8, void *, void * );
-f_UIS_CreateIconicMenu UIS_CreateIconicMenu = ( f_UIS_CreateIconicMenu )0x108C304E;
-
 UINT32 MainStateEnter( EVENT_STACK_T *ev_st,  void *app,  ENTER_STATE_TYPE_T type )
 {
-    APPLICATION_T           *papp = (APPLICATION_T*) app;
-    SU_PORT_T               port = papp->port;
-
-    RESOURCE_ID rid = 0x1000055;
-    UIS_CreateIconicMenu( &port, InFusio_Resource, &rid, 1, InFusio_Resource, InFusio_Resource );
-    return RESULT_OK;
     return Update( ev_st, app, 0 );
 }
 
