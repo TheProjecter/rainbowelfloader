@@ -40,6 +40,7 @@ int _main( )
 #include <loader.h>
 #include <time_date.h>
 #include <util.h>
+#include <drm_icons.h>
 #include "elf_format.h"
 #include "loader.h"
 
@@ -48,15 +49,25 @@ int _main( )
 #define  EVENT_DEL     EVENT_RUN+1
 #define  EVENT_AUTORUN EVENT_DEL+1
 
+#define    InFusio_NameResID 0x01000673
+#define    InFusio_IconResID 0x12000822
+#define    InFusio_IcLsResID 0x12000821
+#define    InFusio_IcAnResID 0x12000820
+
 UINT16     ENTRIES_NUM = 0;
-UINT32     evcode_base = 0x3FD; //Airplane mode
+UINT32     evcode_base = 0xBEEFF; /* 0x3FD; // was Airplane mode*/
+UINT32     InFusio_EvCdResID = 0x1400006F; //InFusio Games
+
+UINT32     InFusio_Resource[] = { 0x000BEEFF, InFusio_NameResID, 0x01000674, InFusio_IcLsResID, 0x00000000, InFusio_IconResID, InFusio_IcAnResID };
+
 UINT32     SelectedElf = 0;
 FILEINFO * fname = NULL;
 
 typedef int ( * ELF_ENTRY)( ElfLoaderApp );
 
 const char app_name[APP_NAME_LEN] = "ElfLoader"; 
-
+WCHAR u_app_name[ APP_NAME_LEN ] = { 'E', 'l', 'f', 'L', 'o', 'a', 'd', 'e', 'r', 0 };
+    
 WCHAR startupcfg[] =  {'f', 'i', 'l', 'e', ':', '/', '/', 'a', '/', 's', 't', 'a', 'r', 't', 'u', 'p', '.', 'c', 'f', 'g', 0};
 
 ElfLoaderApp ** ElfStack = NULL;
@@ -128,6 +139,16 @@ static const STATE_HANDLERS_ENTRY_T state_handling_table[] =
 int beginning( )
 {
     UINT32 status = RESULT_OK;
+
+    //overwrites Infusio menu entry resource ids
+    DRM_SetResource( InFusio_EvCdResID, InFusio_Resource, sizeof( UINT32 ) * sizeof( InFusio_Resource ) );
+    
+    DRM_SetResource( InFusio_NameResID, ( void * )u_app_name, APP_NAME_LEN * 2 );
+    
+    DRM_SetResource( InFusio_IconResID, ( void * )APP_ICON     , 1377 );
+    DRM_SetResource( InFusio_IcLsResID, ( void * )APP_ICON_LIST, 952 );
+    DRM_SetResource( InFusio_IcAnResID, ( void * )APP_ICON_ANI , 1480 );
+    
     status = APP_Register( &evcode_base,
                            1,
                            state_handling_table,
@@ -135,7 +156,7 @@ int beginning( )
                            (void*)AppLoaderStart ); 
 
     ElfStack = ( ElfLoaderApp ** )suAllocMem( sizeof( ElfLoaderApp ) * 128, NULL );
-        
+    
     LoadSymbolDB( ); //Loads firmware symbols database
     DoAutorun( );    //Autorun function
 
@@ -240,8 +261,17 @@ UINT32 Update( EVENT_STACK_T *ev_st,  void *app, UINT32 sItem )
 
 }
 
+typedef UINT32 ( *f_UIS_CreateIconicMenu )( SU_PORT_T *port, void *, RESOURCE_ID *, UINT8, void *, void * );
+f_UIS_CreateIconicMenu UIS_CreateIconicMenu = ( f_UIS_CreateIconicMenu )0x108C304E;
+
 UINT32 MainStateEnter( EVENT_STACK_T *ev_st,  void *app,  ENTER_STATE_TYPE_T type )
 {
+    APPLICATION_T           *papp = (APPLICATION_T*) app;
+    SU_PORT_T               port = papp->port;
+
+    RESOURCE_ID rid = 0x1000055;
+    UIS_CreateIconicMenu( &port, InFusio_Resource, &rid, 1, InFusio_Resource, InFusio_Resource );
+    return RESULT_OK;
     return Update( ev_st, app, 0 );
 }
 
@@ -307,7 +337,7 @@ UINT32 SendListItems( EVENT_STACK_T *ev_st,  void *app, UINT32 start, UINT32 num
 		plist[index].content.static_entry.unk6 = 1;
 
         if( fname[ i - 1 ].in_autorun > 0 )
-            UIS_MakeContentFromString( "p1q0Sp2", &( plist[index].content.static_entry.text ), fname[ i - 1 ].name, Resources[RES_ICON], Resources[RES_AUTORUN] );
+            UIS_MakeContentFromString( "p1q0Sp2", &( plist[index].content.static_entry.text ), fname[ i - 1 ].name, Resources[RES_ICON], DRM_SELECTED );
         else
             UIS_MakeContentFromString( "p1q0", &( plist[index].content.static_entry.text ), fname[ i - 1 ].name, Resources[RES_ICON] );
 	}
@@ -328,30 +358,55 @@ UINT32 SendListItems( EVENT_STACK_T *ev_st,  void *app, UINT32 start, UINT32 num
 
 }
 
+UINT32 u_fix( WCHAR * str )
+{
+    int i;
+    int l = u_strlen( str ) * 2;
+    for( i = 3; i < l; i += 2 )
+    {
+        if( ( ( char * )str )[ i ] < 91 && ( ( char * )str )[ i ] > 64 )
+            ( ( char * )str )[ i ] += 32;
+    }
+    return RESULT_OK;
+}
+
 UINT32 InitResources( )
 {
     RES_ACTION_LIST_ITEM_T		action[3];
     UINT32						status;
 
 	WCHAR list_caption[] = { 'E', 'l', 'f', 'L', 'o', 'a', 'd', 'e', 'r', 0 };
-	WCHAR   run[]   = { 'R', 'u', 'n', 0 };
-	WCHAR delete[] = { 'D', 'e', 'l', 'e', 't', 'e', 0 };
-	WCHAR autorun[] = { 'A', 'd', 'd', '/', 'R', 'e', 'm', 'o', 'v', 'e', ' ', 'a', 'u', 't', 'o', 'r', 'u', 'n', 0 };
-	WCHAR about[]   = { 'A', 'b', 'o', 'u', 't', 0 };
 
     status = DRM_CreateResource( &Resources[RES_LIST_CAPTION], RES_TYPE_STRING, (void*)list_caption, (u_strlen(list_caption)+1)*sizeof(WCHAR) );
+
+    Resources[RES_LABEL1] = LANG_RUN;
+    Resources[RES_LABEL2] = LANG_ABOUT;
+    Resources[RES_LABEL3] = LANG_DEL1;
+
+    WCHAR s[] = { '/', 0 };
+    WCHAR autorun[] = { ' ', 'a', 'u', 't', 'o', 'r', 'u', 'n', 0 };
+
+    WCHAR Add[ 12 ], Remove[ 18 ];
+    WCHAR Autorun[ 64 ];
+    UINT32 len;
     
-    status = DRM_CreateResource( &Resources[RES_LABEL1], RES_TYPE_STRING, ( void * )run, ( u_strlen( run ) + 1 ) * sizeof( WCHAR ) );
-
-    status = DRM_CreateResource( &Resources[RES_LABEL2], RES_TYPE_STRING, ( void * )about, ( u_strlen( about ) + 1 ) * sizeof( WCHAR ) );
-
-    status = DRM_CreateResource( &Resources[RES_LABEL3], RES_TYPE_STRING, ( void * )delete, ( u_strlen( delete ) + 1 ) * sizeof( WCHAR ) );
-
-    status = DRM_CreateResource( &Resources[RES_LABEL4], RES_TYPE_STRING, ( void * )autorun, ( u_strlen( autorun ) + 1 ) * sizeof( WCHAR ) );
-
-    status = DRM_CreateResource( &Resources[RES_ICON], RES_TYPE_GRAPHICS, ( void * )ICON, sizeof( ICON ) );
+    DRM_GetResourceLength( LANG_ADD, &len );
+    DRM_GetResource( LANG_ADD, Add, len );
     
-    status = DRM_CreateResource( &Resources[RES_AUTORUN], RES_TYPE_GRAPHICS, ( void * )AUTORUN, sizeof( AUTORUN ) );
+    DRM_GetResourceLength( LANG_REMOVE, &len );
+    DRM_GetResource( LANG_REMOVE, Remove, len );
+    
+    u_fix( Remove );
+    
+    u_strcpy( Autorun, Add );
+    u_strcat( Autorun, s );
+    u_strcat( Autorun, Remove );
+    u_strcat( Autorun, autorun );
+
+    status = DRM_CreateResource( &Resources[RES_LABEL4], RES_TYPE_STRING, ( void * )Autorun, ( u_strlen( Autorun ) + 1 ) * sizeof( WCHAR ) );
+
+    status = DRM_CreateResource( &Resources[RES_ICON], RES_TYPE_GRAPHICS, ( void * )APP_ICON_LIST, sizeof( APP_ICON_LIST ) );
+    
 	if( status!=RESULT_OK ) return status;
 
     action[0].softkey_label = 0;
@@ -554,7 +609,7 @@ UINT32 Run_Action( EVENT_STACK_T *ev_st,  void *app )
 
     if( SelectedElf > 0 ) --SelectedElf;
 
-    LoadElf( fname[ SelectedElf ] . u_fullname, fname[ SelectedElf ] . Id );
+    LoadElf( fname[ SelectedElf ] . u_fullname, 0 );
 
     AppLoaderExit( ev_st, app );
 
@@ -582,7 +637,7 @@ UINT32 Select( EVENT_STACK_T *ev_st,  void *app)
 
     if( SelectedElf > 0 ) --SelectedElf;
 
-    LoadElf( fname[ SelectedElf ] . u_fullname, fname[ SelectedElf ] . Id );
+    LoadElf( fname[ SelectedElf ] . u_fullname, 0 );
 
     AppLoaderExit( ev_st, app );
 
@@ -800,7 +855,7 @@ void LoadElf( WCHAR * FileName, UINT32 EvCode_Override )
             eapp . evcode = EvCode;
             ++EvCode;
         }
-        
+
         eapp . pid = elfs++;
         ElfStack[ eapp . pid ] = &eapp;
         ( ( ELF_ENTRY )Entry )( eapp );
@@ -1268,6 +1323,7 @@ void DoAutorun( )
         
         if( DL_FsFFileExist( Entry . ElfPath ) )
         {
+            PFprintf( "Ev code: %x\n", Entry . Event_Code );
             LoadElf( Entry . ElfPath, Entry . Event_Code );
         }
     }
