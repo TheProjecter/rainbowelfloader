@@ -66,9 +66,9 @@ FILEINFO * fname = NULL;
 typedef int ( * ELF_ENTRY)( ElfLoaderApp );
 
 const char app_name[APP_NAME_LEN] = "ElfLoader"; 
-WCHAR u_app_name[ APP_NAME_LEN ] = { 'E', 'l', 'f', 'L', 'o', 'a', 'd', 'e', 'r', 0 };
+WCHAR u_app_name[ APP_NAME_LEN ] = L"ElfLoader";
     
-WCHAR startupcfg[] =  {'f', 'i', 'l', 'e', ':', '/', '/', 'a', '/', 's', 't', 'a', 'r', 't', 'u', 'p', '.', 'c', 'f', 'g', 0};
+WCHAR startupcfg[] = L"file://a/startup.cfg";
 
 ElfLoaderApp ** ElfStack = NULL;
 
@@ -366,16 +366,11 @@ UINT32 InitResources( )
     RES_ACTION_LIST_ITEM_T		action[3];
     UINT32						status;
 
-	WCHAR list_caption[] = { 'E', 'l', 'f', 'L', 'o', 'a', 'd', 'e', 'r', 0 };
-
-    status = DRM_CreateResource( &Resources[RES_LIST_CAPTION], RES_TYPE_STRING, (void*)list_caption, (u_strlen(list_caption)+1)*sizeof(WCHAR) );
+    status = DRM_CreateResource( &Resources[RES_LIST_CAPTION], RES_TYPE_STRING, (void*)u_app_name, (u_strlen(u_app_name)+1)*sizeof(WCHAR) );
 
     Resources[RES_LABEL1] = LANG_RUN;
     Resources[RES_LABEL2] = LANG_ABOUT;
     Resources[RES_LABEL3] = LANG_DEL1;
-
-    WCHAR s[] = { '/', 0 };
-    WCHAR autorun[] = { ' ', 'a', 'u', 't', 'o', 'r', 'u', 'n', 0 };
 
     WCHAR Add[ 12 ], Remove[ 18 ];
     WCHAR Autorun[ 64 ];
@@ -390,9 +385,9 @@ UINT32 InitResources( )
     u_fix( Remove );
     
     u_strcpy( Autorun, Add );
-    u_strcat( Autorun, s );
+    u_strcat( Autorun, L"/" );
     u_strcat( Autorun, Remove );
-    u_strcat( Autorun, autorun );
+    u_strcat( Autorun, L" autorun" );
 
     status = DRM_CreateResource( &Resources[RES_LABEL4], RES_TYPE_STRING, ( void * )Autorun, ( u_strlen( Autorun ) + 1 ) * sizeof( WCHAR ) );
 
@@ -667,8 +662,8 @@ UINT32 FindAppS(void)
     char                    uri[256];
     int id = 0;
 
-    WCHAR                   filter[] = {'f', 'i', 'l', 'e', ':', '/', '/', 'a', '/', 0xFFFE, '*', '.', 'e', 'l', 'f', 0xFFFE, '*', '.', 'E', 'L', 'F', 0};
-    WCHAR                   file[] =   {'f', 'i', 'l', 'e', ':', '/', '/', 'a', '/', 0};
+    WCHAR                   filter[] = L"file://a/\xFFFE*.elf\xFFFE*.ELF";
+    WCHAR                   file[] =   L"file://a/";
 
 	UINT16 res_count, count = 1; 
     fs_param.flags = 0x1C;
@@ -758,7 +753,7 @@ UINT32 AboutStateEnter( EVENT_STACK_T *ev_st,  void *app,  ENTER_STATE_TYPE_T ty
     CONTENT_T               content;
     UIS_DIALOG_T            dialog = 0;
 	
-	WCHAR msg[] = { 'E', 'l', 'f', 'L', 'o', 'a', 'd', 'e', 'r', ' ', 'f', 'o', 'r', ' ', 'v', '3', 'x', ' ', 'C', 'o', 'd', 'e', 'd', ' ', 'b', 'y', ' ', 't', 'h', 'e', 'C', 'o', 'r', 'e', ' ', 'a', 'n', 'd', ' ', 'f', 'l', 'a', 's', 'h', '.', 't', 'a', 't', 'o', 0};
+	WCHAR msg[] = L"ElfLoader for v3x coded by theCor3 & flash.tato"; //{ 'E', 'l', 'f', 'L', 'o', 'a', 'd', 'e', 'r', ' ', 'f', 'o', 'r', ' ', 'v', '3', 'x', ' ', 'C', 'o', 'd', 'e', 'd', ' ', 'b', 'y', ' ', 't', 'h', 'e', 'C', 'o', 'r', 'e', ' ', 'a', 'n', 'd', ' ', 'f', 'l', 'a', 's', 'h', '.', 't', 'a', 't', 'o', 0};
 
 	if(type!=ENTER_STATE_ENTER) return RESULT_OK;
     
@@ -1137,7 +1132,7 @@ ElfFunctions * Symbols = ( ElfFunctions * )NULL;
 UINT32 SymMax = 0;
 UINT32 Checksum = 0;
 
-WCHAR rloader[] = { 'f', 'i', 'l', 'e', ':', '/', '/', 'a', '/', 'l', 'i', 'b', 'r', 'a', 'r', 'y', '.', 'd', 'e', 'f', 0 };
+WCHAR rloader[] = L"file://a/library.def";
  
 INT LoadSymbolDB( )
 {
