@@ -70,4 +70,6 @@
 
 #define LANG_RESTART    0x010017F7
 
+#define LANG_APPLY      0x01000E0A
+
 #endif	// SDK_LANG_STRINGS_H
