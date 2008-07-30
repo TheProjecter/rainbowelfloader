@@ -348,7 +348,7 @@ BOOL FeatureTest( UINT32 seem, UINT16 offset, UINT8 bit )
 
 WCHAR                   reboot[] = {'R', 'e', 'b', 'o', 'o', 't', 0 };
 WCHAR                   p1[] = { '[', 0 };
-WCHAR                   p2[] = { '[', 0 };
+WCHAR                   p2[] = { ']', 0 };
 
 UINT32 SendListItems( EVENT_STACK_T *ev_st,  void *app, UINT32 start, UINT32 num)
 {
