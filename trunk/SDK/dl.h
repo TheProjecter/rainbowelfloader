@@ -45,11 +45,13 @@
    Свет 
 *******************************/
 
-/* Отключить диспей */
+/* Turn off display */
 void DAL_DisableDisplay( UINT32 p1 ); // p1 = 0
 
-/* Включить диспей */
+/* Turn on display */
 void DAL_EnableDisplay( UINT32 p1 ); // p1 = 0
+
+UINT8 DAL_GetDisplayState( void );
 
 void DL_KeyUpdateKeypadBacklight( UINT8 P1 ); // P1 = 1 lighting; P2 = 0
 
@@ -71,15 +73,15 @@ UINT32 UIS_SetBacklightWithIntensity( UINT8 color, // = 255
 #define ID_WORKING_TABLE_49			   0x7F8
 #define ID_IMEI                        0x9CE
 
-// чтение 
+// read from 4a
 UINT8 DL_DbFeatureGetCurrentState( UINT16 fstate_ID, UINT8 *state );
-// запись 
+// write in 4a
 UINT8 DL_DbFeatureStoreState(UINT16 fstate_ID, UINT8 state);
 
 UINT8 DL_DbFeatureGetValueString(UINT32 feature_id, WCHAR *feature_string );
 
 /*************************
-  Симы
+  seem
 *************************/
 
 typedef struct {
@@ -91,39 +93,39 @@ typedef struct {
 
 
 // чтение из сима
-UINT16   SEEM_ELEMENT_DATA_read 	( 	SEEM_ELEMENT_DATA_CONTROL_T  *data_ctrl_ptr, // указатель на структуру данных, содержащую информацию о запросе
-										UINT8  *data_buf, // указатель на буфер, куда прочитаются данные
-										BOOL read_zero_byte_allowed  // если true, то можно читать маленькие симы, длина которых меньше 255
+UINT16   SEEM_ELEMENT_DATA_read 	( 	SEEM_ELEMENT_DATA_CONTROL_T  *data_ctrl_ptr,
+										UINT8  *data_buf,
+										BOOL read_zero_byte_allowed
 									);
+// *data_ctrl_ptr - a pointer to a data structure containing information on request
+// *data_buf - data_buf - a pointer to the buffer where the data prochitayutsya
 
-//  запись в сим												
+// read_zero_byte_allowed - if true, it is possible to read the small seem with a length less than 255												
+						
+						
+//  record in a seem													
 UINT16  SEEM_ELEMENT_DATA_write	(  	SEEM_ELEMENT_DATA_CONTROL_T  *data_ctrl_ptr,
-									UINT8  *seem_data_ptr // указатель на буфер, где хранятся записываемые данные
+									UINT8  *seem_data_ptr
 								);	
-													
-/* Читает в буфер seem_data count байт сима seem, записи record
-	Перед чтением ОБЯЗАТЕЛЬНО выделить не менее count байт памяти! */
+// *seem_data_ptr - a pointer to the buffer, which are stored recording data													
+
 UINT32 SEEM_FDI_OUTSIDE_SEEM_ACCESS_read( UINT32 seem,  UINT32 record,  void* seem_data,  UINT32 count );
 
-/* Записывает из буфера seem_data count байт в сим seem, запись record
-	Не проверено */
 #define SEEM_WRITE_METHOD_ADD				0
 #define SEEM_WRITE_METHOD_UPDATE			1
 UINT32 SEEM_FDI_OUTSIDE_SEEM_ACCESS_write( UINT32 method,  UINT32 seem,  UINT32 record,  void* seem_data,  UINT32 count );
 													
 													
 /****************************
-  Питание 
+  Power mngmnt 
 *****************************/													
-/* Функция ребута */
-void HAPI_WATCHDOG_soft_reset( void );
 
-/* Функция выключения */
+/* Function shutdown */
 void pu_main_powerdown(UINT32 r0);
 
 
 /****************************
-  Громкость 
+  Volume 
 ****************************/
 
 enum // volume_type
@@ -140,14 +142,14 @@ enum // volume_type
     MAX = IMMUTABLE_MAX
 };
 
-// установить громкость
+// Sets volume
 void DL_AudSetVolumeSetting(UINT8 volume_type, UINT8 volume);
-// получить текущую громкость
+// Gets volume
 void DL_AudGetVolumeSetting(UINT8 volume_type, UINT8 *volume);
 
 
 /****************************
-  Звонки
+  Calls
 ****************************/
 
 #define MAX_CALLS                   7
@@ -166,14 +168,14 @@ typedef struct
 } CALL_STATES_T;
 
 
-// если number_of_calls == 0, то вызовов нет
+// if number_of_calls == 0, then no calls
 void DL_SigCallGetCallStates(CALL_STATES_T *call_states);
 
-// TRUE - звонок (входящий/исходящий)
-BOOL APP_MMC_Util_IsVoiceCall(void); // если FALSE, то вызовов нет
+// TRUE - call is voice call
+BOOL APP_MMC_Util_IsVoiceCall(void); // if it is FALSE, no calls
 
-// TRUE - звонок (входящий/исходящий)
-BOOL APP_MMC_Util_IsVideoCall(void); // если FALSE, то вызовов нет
+// TRUE - call is video call
+BOOL APP_MMC_Util_IsVideoCall(void); // if it is FALSE, no calls
 
 /*******************************
   Отправка сообщений 

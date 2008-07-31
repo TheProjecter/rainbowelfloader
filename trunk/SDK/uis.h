@@ -266,24 +266,24 @@ UIS_DIALOG_T UIS_CreateCharacterEditor( SU_PORT_T  *port,
                                         ACTIONS_T       *actions, 
                                         RESOURCE_ID     dlgres ); 
 /* 
-  Значения edit_type:
-0 - Каждое Слово С Большой Буквы
-1 - простой текст
-2 - Каждое предложение. С большой буквы
-3 - аналогично, для очень длинных строк
-4 - номер телефона
-5 - ВСЕ БУКВЫ БОЛЬШИЕ 
-6 - строка как последовательность числовых сегментов
-7 - простой текст без смены режимов
-8 - аналогично, без детализации
-9 - как 4, без доп меню
-10 - аналог, без детализации
-11 - как 0, с возможностью ввода пустой строки
-12 - как 1, с возможностью ввода пустой строки
-23 - url
-28 - строка с аттачами
-29 - тоже, но можно и пусто
-32 - только числа
+   Edit_type Values: 
+0 - Every Word From Big Letters 
+1 - simple text 
+2 - Each proposal. In large letters 
+3 - the same for a very long lines 
+4 - Telephone 
+5 - ALL CAPS BIG 
+6 - line as a sequence of numeric segments 
+7 - a simple text without regime change 
+8 - the same, without going into detail 
+9 - as 4, with no extra menu 
+10 - analog, without going into detail 
+11 - as 0, with the possibility of entering an empty row 
+12 - as 1, with the possibility of entering an empty row 
+23 - url 
+28 - with the line anymore 
+29 - too, but you can and empty 
+32 - only numbers
 */
 
 // диалог для просмотра

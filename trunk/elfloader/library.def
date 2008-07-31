@@ -64,6 +64,7 @@ UIS_SetBacklightWithIntensity=108C5D28
 DL_KeyUpdateKeypadBacklight=10730FCA
 DAL_DisableDisplay=108246FA
 DAL_EnableDisplay=10824748
+DAL_GetDisplayState=10824796
 pu_main_powerdown=101AA68C
 DL_SigRegQuerySignalStrength=1073EDB2
 DL_PwrGetActiveBatteryPercent=1070EDB2
