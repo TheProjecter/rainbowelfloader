@@ -40,6 +40,7 @@
 
 // Сработал таймер
 #define EV_TIMER_EXPIRED		  0x8205A // (DL_TIMER_DATA_T*)EVENT_T::attachment
+#define EV_CALL_RECEIVED          0x82015
 
 // получение фокуса
 #define EV_GAIN_FOCUS			  20 
