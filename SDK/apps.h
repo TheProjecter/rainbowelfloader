@@ -80,7 +80,7 @@ typedef struct
 } APPLICATION_T; //size = 80
 
 
-/* Зарегистрировать Application */
+/* Registers the Application */
 UINT32 APP_Register( EVENT_CODE_T                   *registry_table,
                      UINT8                          reg_count,
                      const STATE_HANDLERS_ENTRY_T   *state_handlers,
@@ -124,14 +124,14 @@ UINT32 APP_Exit( EVENT_STACK_T        *ev_st,
                  APPLICATION_T        *app,
                  UINT32               param2 );
 
-/* Сменить текущий state
-   При этом будет вызвана функция выхода из текущего state и ф-я входа в новый */
+/*Change the current state 
+    This function will be called exit the current state and the f-I entrance to the new */
 UINT32 APP_UtilChangeState( UINT8 new_state,  EVENT_STACK_T *ev_st,  void *app );
 
-/* Сменить текущий state с сохранением текущего состояния приложения (в стек) */
+/* Change the current state of preservation of the current state of applications (stacked) */
 UINT32 APP_UtilHistSaveAndChangeState( void *data,  EVENT_STACK_T *ev_st,  void *app,  UINT8 new_state ); //data - unknown
 
-/* Вернуть предыдущий state, сохранённый функцией APP_UtilHistSaveAndChangeState*/
+/* Revert to the previous state, saved APP_UtilHistSaveAndChangeState function */
 UINT32 APP_UtilHistGoToPrevState( void *data,  EVENT_STACK_T *ev_st,  void *app );
 
 
