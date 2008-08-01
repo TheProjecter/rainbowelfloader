@@ -44,7 +44,7 @@ int _main( )
 #include "elf_format.h"
 #include "loader.h"
 
-#define  EVENT_ABOUT   0xABCDE
+#define  EVENT_ABOUT   0xABCD
 #define  EVENT_RUN     EVENT_ABOUT+1
 #define  EVENT_DEL     EVENT_RUN+1
 #define  EVENT_AUTORUN EVENT_DEL+1
@@ -55,10 +55,10 @@ int _main( )
 #define    InFusio_IcAnResID 0x12000820
 
 UINT16     ENTRIES_NUM = 0;
-UINT32     evcode_base = 0xBEEFF; /* 0x3FD; // was Airplane mode*/
+UINT32     evcode_base = 0xEEED; /* 0x3FD; // was Airplane mode*/
 UINT32     InFusio_EvCdResID = 0x1400006F; //InFusio Games
 
-UINT32     InFusio_Resource[] = { 0x000BEEFF, InFusio_NameResID, 0x01000674, InFusio_IcLsResID, 0x00000000, InFusio_IconResID, InFusio_IcAnResID };
+UINT32     InFusio_Resource[] = { 0x000EEED, InFusio_NameResID, 0x01000674, InFusio_IcLsResID, 0x00000000, InFusio_IconResID, InFusio_IcAnResID };
 
 UINT32     SelectedElf = 0;
 FILEINFO * fname = NULL;
@@ -71,6 +71,7 @@ WCHAR u_app_name[ APP_NAME_LEN ] = L"ElfLoader";
 WCHAR startupcfg[] = L"file://a/startup.cfg";
 
 ElfLoaderApp ** ElfStack = NULL;
+ElfFunctions * Symbols = ( ElfFunctions * )NULL;
 
 int elfs = 0;
 
@@ -125,7 +126,7 @@ static const STATE_HANDLERS_ENTRY_T state_handling_table[] =
     {
         HW_STATE_MAIN,
         MainStateEnter,
-        NULL,
+        MainStateExit,
         main_state_handlers
     },
     {
@@ -155,7 +156,7 @@ int beginning( )
                            HW_STATE_MAX, 
                            (void*)AppLoaderStart ); 
 
-    ElfStack = ( ElfLoaderApp ** )suAllocMem( sizeof( ElfLoaderApp ) * 128, NULL );
+    //ElfStack = ( ElfLoaderApp ** )suAllocMem( sizeof( ElfLoaderApp ) * 128, NULL ); //will be useful
     
     LoadSymbolDB( ); //Loads firmware symbols database
     DoAutorun( );    //Autorun function
@@ -185,7 +186,7 @@ UINT32 AppLoaderStart( EVENT_STACK_T *ev_st,  REG_ID_T reg_id,  UINT32 param2 )
                         AppLoaderExit,
                         app_name,
                         0 );
-
+    
     return RESULT_OK;
 }
 
@@ -194,15 +195,15 @@ UINT32 AppLoaderExit( EVENT_STACK_T *ev_st,  void *app )
     APPLICATION_T			*papp = (APPLICATION_T*) app;
     UINT32  status;
 
-    APP_UtilUISDialogDelete(  &papp->dialog );
-
 	RemoveResources();
 
     suFreeMem( fname );
 
-    status = APP_Exit( ev_st, app, 0 );
+    APP_UtilUISDialogDelete( &papp->dialog );
 
-    return status;
+    status = APP_Exit( ev_st, app, NULL );
+
+    return RESULT_OK;
 }
 
 UINT32 Update( EVENT_STACK_T *ev_st,  void *app, UINT32 sItem )
@@ -218,12 +219,13 @@ UINT32 Update( EVENT_STACK_T *ev_st,  void *app, UINT32 sItem )
 		APP_UtilUISDialogDelete( &papp->dialog );
 		papp->dialog = NULL;
         RemoveResources();
-	}	
+	}
+	
+	FindAppS( );
 
-    FindAppS( );
-	InitDlgActions( &action_list );
 	InitResources();
-
+	InitDlgActions( &action_list );
+	
 	dialog = UIS_CreateList( &port,
 							 0,
 							 ENTRIES_NUM,
@@ -263,7 +265,18 @@ UINT32 Update( EVENT_STACK_T *ev_st,  void *app, UINT32 sItem )
 
 UINT32 MainStateEnter( EVENT_STACK_T *ev_st,  void *app,  ENTER_STATE_TYPE_T type )
 {
+    if( type != ENTER_STATE_ENTER ) return RESULT_OK;
+
     return Update( ev_st, app, 0 );
+}
+
+UINT32 MainStateExit( EVENT_STACK_T *ev_st,  void *app,  EXIT_STATE_TYPE_T type )
+{
+	APPLICATION_T           *papp = (APPLICATION_T*) app;
+
+	APP_UtilUISDialogDelete( &papp->dialog );
+
+	return RESULT_OK;
 }
 
 UINT32 HandleUITokenGranted( EVENT_STACK_T *ev_st,  void *app )
@@ -286,7 +299,6 @@ UINT32 HandleListReq( EVENT_STACK_T *ev_st,  void *app )
 	APPLICATION_T			*papp = (APPLICATION_T*) app;
 	EVENT_T					*event;
 	UINT32					start, num;
-    UINT32                  rtv;
     
 	if( !papp->focused ) return RESULT_OK;
 
@@ -306,7 +318,7 @@ UINT32 Navigate (EVENT_STACK_T *ev_st,  void *app )
 
 	SelectedElf = event->data.index;
 
-	APP_ConsumeEv( ev_st, app );
+	//APP_ConsumeEv( ev_st, app );
 
 	return RESULT_OK;
 }
@@ -363,7 +375,7 @@ UINT32 u_fix( WCHAR * str )
 
 UINT32 InitResources( )
 {
-    RES_ACTION_LIST_ITEM_T		action[3];
+    RES_ACTION_LIST_ITEM_T		action[4];
     UINT32						status;
 
     status = DRM_CreateResource( &Resources[RES_LIST_CAPTION], RES_TYPE_STRING, (void*)u_app_name, (u_strlen(u_app_name)+1)*sizeof(WCHAR) );
@@ -398,7 +410,7 @@ UINT32 InitResources( )
     action[0].softkey_label = 0;
     action[0].list_label = Resources[RES_LABEL1];
     action[0].softkey_priority = 0;
-    action[0].list_priority = 4;
+    action[0].list_priority = 3;
     action[0].isExit = FALSE;
     action[0].sendDlgDone = FALSE;
 
@@ -408,7 +420,7 @@ UINT32 InitResources( )
     action[3].softkey_label = 0;
     action[3].list_label = Resources[RES_LABEL4];
     action[3].softkey_priority = 0;
-    action[3].list_priority = 3;
+    action[3].list_priority = 2;
     action[3].isExit = FALSE;
     action[3].sendDlgDone = FALSE;
 
@@ -418,7 +430,7 @@ UINT32 InitResources( )
     action[1].softkey_label = 0;
     action[1].list_label = Resources[RES_LABEL2];
     action[1].softkey_priority = 0;
-    action[1].list_priority = 1;
+    action[1].list_priority = 0;
     action[1].isExit = FALSE;
     action[1].sendDlgDone = FALSE;
 
@@ -428,7 +440,7 @@ UINT32 InitResources( )
     action[2].softkey_label = 0;
     action[2].list_label = Resources[RES_LABEL3];
     action[2].softkey_priority = 0;
-    action[2].list_priority = 2;
+    action[2].list_priority = 1;
     action[2].isExit = FALSE;
     action[2].sendDlgDone = FALSE;
 
@@ -454,7 +466,7 @@ UINT32 RemoveResources( )
 
 UINT32 About_Action( EVENT_STACK_T *ev_st,  void *app )
 {
-    EVENT_T     *event = AFW_GetEv(ev_st);
+    //EVENT_T     *event = AFW_GetEv(ev_st);
     
     APP_UtilChangeState( HW_STATE_ABOUT, ev_st, app );
 
@@ -465,7 +477,6 @@ UINT32 About_Action( EVENT_STACK_T *ev_st,  void *app )
 
 UINT32 AutRun_Action( EVENT_STACK_T *ev_st,  void *app )
 {
-    EVENT_T     *event = AFW_GetEv(ev_st);
 	APP_ConsumeEv( ev_st, app );
 
     if( SelectedElf > 0 ) --SelectedElf;
@@ -590,7 +601,6 @@ UINT32 AutRun_Action( EVENT_STACK_T *ev_st,  void *app )
 
 UINT32 Run_Action( EVENT_STACK_T *ev_st,  void *app )
 {
-    EVENT_T     *event = AFW_GetEv(ev_st);
 	APP_ConsumeEv( ev_st, app );
 
     if( SelectedElf > 0 ) --SelectedElf;
@@ -604,7 +614,6 @@ UINT32 Run_Action( EVENT_STACK_T *ev_st,  void *app )
 
 UINT32 Del_Action( EVENT_STACK_T *ev_st,  void *app )
 {
-    EVENT_T     *event = AFW_GetEv(ev_st);
 	APP_ConsumeEv( ev_st, app );
 
     if( SelectedElf > 0 ) --SelectedElf;
@@ -618,7 +627,6 @@ UINT32 Del_Action( EVENT_STACK_T *ev_st,  void *app )
 
 UINT32 Select( EVENT_STACK_T *ev_st,  void *app)
 {
-    EVENT_T     *event = AFW_GetEv(ev_st);
 	APP_ConsumeEv( ev_st, app );
 
     if( SelectedElf > 0 ) --SelectedElf;
@@ -662,7 +670,7 @@ UINT32 FindAppS(void)
     char                    uri[256];
     int id = 0;
 
-    WCHAR                   filter[] = L"file://a/\xFFFE*.elf\xFFFE*.ELF";
+    WCHAR                   filter[] = L"file://a/\xFFFE*.elf";
     WCHAR                   file[] =   L"file://a/";
 
 	UINT16 res_count, count = 1; 
@@ -674,14 +682,16 @@ UINT32 FindAppS(void)
 
     ENTRIES_NUM = res_count;
 
-    if( !fname ) suFreeMem(fname);
+    if( !fname ) suFreeMem( fname );
 
     fname = ( FILEINFO * ) suAllocMem( ENTRIES_NUM * sizeof( FILEINFO ), NULL );
+
+    int corr = 0;
 
     for( i = 0; i < ENTRIES_NUM; i++ )
     {
         DL_FsSearchResults( fs_handle, i, &count, &fs_result );
-        
+
         strcpy( fname[i].fullname, "file:/" );
         u_strcpy( fname[i].u_fullname, file );
 
@@ -690,9 +700,7 @@ UINT32 FindAppS(void)
         u_strcat( fname[i].u_fullname, fs_result.name );
         strcat(fname[i].fullname, uri);
         
-        fname[i].in_autorun = InAutorun( fname[i].u_fullname );
-        fname[i].selected = FALSE;
-        fname[i].Id = id++;
+        fname[i].in_autorun = InAutorun( i );
     }
 
     DL_FsSearchClose(fs_handle);
@@ -753,7 +761,7 @@ UINT32 AboutStateEnter( EVENT_STACK_T *ev_st,  void *app,  ENTER_STATE_TYPE_T ty
     CONTENT_T               content;
     UIS_DIALOG_T            dialog = 0;
 	
-	WCHAR msg[] = L"ElfLoader for v3x coded by theCor3 & flash.tato"; //{ 'E', 'l', 'f', 'L', 'o', 'a', 'd', 'e', 'r', ' ', 'f', 'o', 'r', ' ', 'v', '3', 'x', ' ', 'C', 'o', 'd', 'e', 'd', ' ', 'b', 'y', ' ', 't', 'h', 'e', 'C', 'o', 'r', 'e', ' ', 'a', 'n', 'd', ' ', 'f', 'l', 'a', 's', 'h', '.', 't', 'a', 't', 'o', 0};
+	WCHAR msg[] = L"ElfLoader for v3x coded by theCor3 & flash.tato";
 
 	if(type!=ENTER_STATE_ENTER) return RESULT_OK;
     
@@ -795,18 +803,18 @@ UINT32 EvCode = 0xA000; //Base evcode for our elfs
 
 void LoadElf( WCHAR * FileName, UINT32 EvCode_Override )
 {
-	FILE_HANDLE_T Elf;
+	FILE_HANDLE_T Elf = 0;
 	BYTE * ElfImage;
 	ELF_ENTRY ElfImageEntryPoint;
 	INT FileSize;
-	INT Error;
-	DWORD ExitCode;
 	UINT32 rd;
 
 	Elf = DL_FsOpenFile( FileName, FILE_READ_MODE, NULL );
 	if( Elf == FILE_HANDLE_INVALID )
 	{
-		PFprintf( "[ ELF_RNNR_LOG ]Can't open file: %s\n", FileName );
+        char a_str[ 64 ];
+        u_utoa( FileName, a_str );
+		PFprintf( "[ ELF_RNNR_LOG ]Can't open file: %s -> handle %x\n", a_str, Elf );
 		return;
 	}
 
@@ -828,7 +836,9 @@ void LoadElf( WCHAR * FileName, UINT32 EvCode_Override )
 
     ElfLoaderApp eapp;
 	eapp = ParseElf( ElfImage, FileSize );
-                        
+    
+    suFreeMem( ElfImage );
+    
 	DL_FsCloseFile( Elf );
 	
 	if( eapp . textptr != NULL &&
@@ -843,11 +853,12 @@ void LoadElf( WCHAR * FileName, UINT32 EvCode_Override )
         }
 
         eapp . pid = elfs++;
-        ElfStack[ eapp . pid ] = &eapp;
+        //ElfStack[ eapp . pid ] = &eapp;
+
         ( ( ELF_ENTRY )Entry )( eapp );
     }
     
-	suFreeMem( ElfImage );
+    return;
 }
 
 UINT32 BASE_ADDR;
@@ -1029,7 +1040,7 @@ ElfLoaderApp ParseElf( BYTE * ElfImage, UINT32 Size )
 				 
 		if( ElfSectionStrTab -> Type == 3 )
 		{
-            PFprintf( "[ ELF_RNNR_DEBUG_LOG ]Section StrTab 0x%x\n", ElfSectionStrTab -> Offset );
+            //PFprintf( "[ ELF_RNNR_DEBUG_LOG ]Section StrTab 0x%x\n", ElfSectionStrTab -> Offset );
             break;
         }
     }
@@ -1128,7 +1139,6 @@ ElfLoaderApp ParseElf( BYTE * ElfImage, UINT32 Size )
 	return ElfApp;
 }
 
-ElfFunctions * Symbols = ( ElfFunctions * )NULL;
 UINT32 SymMax = 0;
 UINT32 Checksum = 0;
 
@@ -1234,7 +1244,7 @@ INT ExternalSymbolLookup( char * SymbolName, unsigned * Address )
 	return 1;
 }
 
-int InAutorun( WCHAR * Elf )
+int InAutorun( UINT32 Elf )
 {
     UINT32 filesize;
     UINT32 r;
@@ -1271,9 +1281,11 @@ int InAutorun( WCHAR * Elf )
                f,
                &r );
 
-        if( !u_strcmp( Entry . ElfPath, Elf ) )
+        if( !u_strcmp( Entry . ElfPath, fname[ Elf ].u_fullname ) )
             return i + 1;
     }
+    
+    DL_FsCloseFile( f );
 
     return 0;
 }

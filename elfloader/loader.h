@@ -20,13 +20,11 @@ typedef enum
 typedef enum
 {
 	RES_LIST_CAPTION=0,
-	RES_SOFTKEY_LABEL,
 	RES_LABEL1,
 	RES_LABEL2,
 	RES_LABEL3,
 	RES_LABEL4,
 	RES_ICON,
-	RES_AUTORUN,
 	RES_ACTION1,
 	RES_ACTION2,
 	RES_ACTION3,
@@ -49,11 +47,9 @@ typedef struct
 typedef struct
 { 
 	WCHAR		name[64];
-    char       fullname[256];
-    WCHAR       u_fullname[ 512 ];
-    BOOL        selected;
+    char       fullname[ 128 ];
+    WCHAR       u_fullname[ 128 ];
     UINT32      in_autorun;
-    int         Id;
 } FILEINFO;
 
 RESOURCE_ID Resources[RES_MAX];
@@ -62,6 +58,7 @@ UINT32 AppLoaderStart( EVENT_STACK_T *ev_st,  REG_ID_T reg_id,  UINT32 param2 );
 UINT32 AppLoaderExit( EVENT_STACK_T *ev_st,  void *app );
 
 UINT32 MainStateEnter( EVENT_STACK_T *ev_st,  void *app,  ENTER_STATE_TYPE_T type );
+UINT32 MainStateExit( EVENT_STACK_T *ev_st,  void *app,  EXIT_STATE_TYPE_T type );
 
 UINT32 HandleUITokenGranted( EVENT_STACK_T *ev_st,  void *app );
 UINT32 HandleListReq( EVENT_STACK_T *ev_st,  void *app );
@@ -83,7 +80,7 @@ UINT32 FindAppS(void);
 UINT32 Fullname2Name(void);
 void LoadElf( WCHAR *, UINT32 );
 
-int InAutorun( WCHAR * );
+int InAutorun( UINT32 );
 INT LoadSymbolDB( );
 void DoAutorun( );
 
@@ -91,7 +88,6 @@ char * trim( char * str );
 
 UINT32 Navigate (EVENT_STACK_T *ev_st,  void *app );
 
-UINT32 StateExit( EVENT_STACK_T *ev_st,  void *app,  EXIT_STATE_TYPE_T type );
 UINT32 AboutExit( EVENT_STACK_T *ev_st,  void *app );
 UINT32 AboutStateEnter( EVENT_STACK_T *ev_st,  void *app,  ENTER_STATE_TYPE_T type );
 
