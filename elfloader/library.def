@@ -178,3 +178,5 @@ strcat=10284944
 strcmp=10284984
 strncmp=10284ADC
 sprintf=10283154
+utility_draw_image=108D3EBC
+utility_get_image_size=108D3B94
