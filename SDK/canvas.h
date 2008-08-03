@@ -293,6 +293,14 @@ UINT32 UIS_CanvasGetStringSize( WCHAR * str,
 // размер шрифта								
 UINT32 UIS_CanvasGetFontSize ( UINT8 font_id, GRAPHIC_METRIC_T * font_size);								
 						
+UINT32 utility_draw_image( RESOURCE_ID res_id,
+							GRAPHIC_REGION_T region,
+							void * p_attr,
+							void * drawBuf,
+							UINT32 unk1 );	
+
+void utility_get_image_size(RESOURCE_ID res_id, UINT16 *width, UINT16 *height);
+	
 /*******************************/
 
 // рисует картику					
