@@ -54,6 +54,8 @@
 #define EV_FLIP_CLOSE             0x20C2 //0x20C0
 #define EV_FLIP_OPEN              0x20C3
 
+#define EV_CALL_END               0x8201C
+
 typedef enum
 {
       FBF_FREE = 100,  // ОС должна освободить буффер
