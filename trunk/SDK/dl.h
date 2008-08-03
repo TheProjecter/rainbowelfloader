@@ -68,9 +68,6 @@ UINT32 UIS_SetBacklightWithIntensity( UINT8 color, // = 255
    DbFeature
 ******************************/
 
-#define ID_KEYPAD_LOCK_79              0x86A 
-#define ID_KEYPAD_LOCK_49              0x7F3 
-#define ID_WORKING_TABLE_49			   0x7F8
 #define ID_IMEI                        0x9CE
 #define ID_CLOCK                       0x6FF //0 Dig, 1 an, 2 off
 #define ID_DATE                        0x7C3 //0 off, 1 on
