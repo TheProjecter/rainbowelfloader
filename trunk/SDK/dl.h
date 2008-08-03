@@ -72,6 +72,16 @@ UINT32 UIS_SetBacklightWithIntensity( UINT8 color, // = 255
 #define ID_KEYPAD_LOCK_49              0x7F3 
 #define ID_WORKING_TABLE_49			   0x7F8
 #define ID_IMEI                        0x9CE
+#define ID_CLOCK                       0x6FF //0 Dig, 1 an, 2 off
+#define ID_DATE                        0x7C3 //0 off, 1 on
+#define ID_DATE_DISP                   0x6FE //0 left, 1 cent
+#define ID_MAINMENU_STLYE              0x6A0 //0 icons, 1 list
+#define ID_BKG_STYLE                   0x678 //0 cent, 1 mul, 2 ad
+#define ID_SCREENSAVER                 0x69C //0 off, ....
+#define ID_PHOTO_RESOLUTION            0x6C5 //0, 1, 2, 3
+#define ID_PHOTO_QUALITY               0x75B //0, 1, 2
+#define ID_VIDEO_LEN                   0x692 //0, 1, 2
+#define ID_VIDEO_QUALITY               0x691 //0, 1, 2
 
 // read from 4a
 UINT8 DL_DbFeatureGetCurrentState( UINT16 fstate_ID, UINT8 *state );
