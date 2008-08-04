@@ -102,6 +102,10 @@ WCHAR * DL_FsVolumeEnum( WCHAR * result ); // result = {0,'/',0,'a',0xff,0xfe,0,
 #define FS_ATTR_DIRECTORY  	0x0010
 #define FS_ATTR_ARCHIVE    	0x0020
 
+#define FS_SEARCH_RECURSIVE				0x01
+#define FS_SEARCH_FOLDERS				0x10
+#define FS_SEARCH_SORT_BY_NAME			0x04
+
 typedef struct
 {
     UINT8				flags;  // Значения бит не ясны. В FBrowser использовалось 00011100b(0x1C). Известно, что бит 00000100b(0x4) отвечает за сортировку по имени
@@ -135,6 +139,23 @@ UINT16 DL_FsSearchResults( FS_SEARCH_HANDLE_T		handle,
 
 UINT16 DL_FsSearchClose( FS_SEARCH_HANDLE_T handle );
 
+typedef struct {
+	WCHAR		volume[3];
+	WCHAR		descr[13];	// flash (for phone)
+	UINT32		free_size;	// in bytes
+	UINT32		vol_size;	// in bytes
+	UINT16		attr;		// ??. For vol /b attr==type
+	UINT8		unk1;		// 0x01
+	UINT8		unk2;		// 0x00
+	UINT16		type;		// ?? 0x40 - TRANS / 0x01 - flash. FileSystem???
+	UINT16		unk3;
+	UINT32		unk4;		// pointer to DSP??? only for TRANS
+} VOLUME_DESCR_T;
 
+/* Gets volume informations */
+VOLUME_DESCR_T * DL_FsGetVolumeDescr( WCHAR * volume, VOLUME_DESCR_T * vd );
+
+// Returns a list of available volumes
+WCHAR* DL_FsVolumeEnum( WCHAR *result ); // result = {0,'/',0,'a',0xff,0xfe,0,'/', ...}
 
 #endif

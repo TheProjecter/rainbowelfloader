@@ -123,6 +123,7 @@ DL_FsSearchResults=1077272C
 DL_FsSearchClose=107728AE
 DL_FsFlush=10773BBE
 DL_FsVolumeEnum=10772C50
+DL_FsGetVolumeDescr=10772A2C
 suAllocMem=10040310
 suFreeMem=10040338
 DRM_CreateResource=102F9BD4
