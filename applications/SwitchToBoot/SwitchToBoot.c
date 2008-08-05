@@ -99,13 +99,7 @@ UINT32 SwitchToBootExit( EVENT_STACK_T *ev_st,  void *app )
 
 UINT32 MainStateEnter( EVENT_STACK_T *ev_st,  void *app,  ENTER_STATE_TYPE_T type )
 {
-	
-	if( DL_PwrGetChargingMode() == CHARGING_MODE_PC ) {
-		pu_main_powerdown( 3 );
-	}
-	else {
-		pu_main_powerdown( 1 );
-	}
+    pu_main_powerdown( 3 );
 
     return RESULT_OK;
 }
