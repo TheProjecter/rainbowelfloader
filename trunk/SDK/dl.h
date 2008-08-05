@@ -273,18 +273,6 @@ void DL_KeyInjectKeyPress( UINT8 key_code,
 						   UINT8 p3 // = 0
 						  );
 
-// получение кодов
-UINT32 DL_DbSigNamGetSecurityCode(WCHAR *);
-UINT32 DL_DbSigNamGetUnlockCode(WCHAR *);
-
-// статус PIN
-enum {
-	SIMPIN_STATUS_SECURED = 2,	// Также без симки
-	SIMPIN_STATUS_NO_PIN,
-	SIMPIN_STATUS_INVALID
-};
-UINT8 DL_SimMgrGetPinStatus( UINT8 card );
-
 // сила сигнала сети
 typedef struct
 {
@@ -303,13 +291,12 @@ UINT8 DL_PwrGetActiveBatteryPercent( void );	// бесполезная ф-ция
 enum
 {
     CHARGING_MODE_NONE = 0,
-    CHARGING_MODE_NORMAL = 1,
-    CHARGING_MODE_PC
+    CHARGING_MODE_IN_PROGRESS = 1,
+    CHARGING_MODE_CHARGING_COMPLETE
 };
 
 UINT8 DL_PwrGetChargingMode( void );
 
-UINT32 SetFlashLight( UINT32 status );
 
 #endif
 
