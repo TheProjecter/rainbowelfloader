@@ -88,7 +88,7 @@ UINT32 ListBkgs( EVENT_STACK_T *ev_st,  void *app )
     FS_SEARCH_HANDLE_T      fs_handle;
     FS_SEARCH_RESULT_T      fs_result; 
 
-    WCHAR                   filter[] = {'f', 'i', 'l', 'e', ':', '/', '/', 'e', '/', 'm', 'o', 'b', 'i', 'l', 'e', '/', 'p', 'i', 'c', 't', 'u', 'r', 'e', '/', 0xFFFE, '*', '.', 'j', 'p', 'g', 0xFFFE, '*', '.', 'p', 'n', 'g', 0};
+    WCHAR                   filter[] = L"file://e/mobile/picture/multi/\xFFFE*.jpg\xFFFE*.png\xFFFE*.gif";
 
 	UINT16 res_count, count = 1; 
     fs_param.flags = 0x1C;
@@ -101,6 +101,7 @@ UINT32 ListBkgs( EVENT_STACK_T *ev_st,  void *app )
     
     if( bkgs <= 0 )
     {
+        PFprintf( "No bkgs\n" );
         KillMe = TRUE;
         return NULL;
     }
@@ -178,15 +179,10 @@ UINT32 Timer( EVENT_STACK_T *ev_st,  void *app )
             current_bkg++;
         else
             current_bkg = 0;
-    }
-    
-    if( InitTimer )
-    {
-        InitTimer = FALSE;
+            
         APP_UtilStopTimer( app );
-        APP_UtilStartCyclicalTimer( 80000, 1, app );
+        APP_UtilStartTimer( 30000, 1, app );
     }
-
 
 	return RESULT_OK;
 }
