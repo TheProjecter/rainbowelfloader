@@ -1,4 +1,4 @@
-INPUT("MultiBkg.o")
+INPUT("MultiBkg\MultiBkg.o")
 OUTPUT_FORMAT("elf32-mcore-big")
 ENTRY(_main)
 SECTIONS
