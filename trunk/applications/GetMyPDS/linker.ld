@@ -1,4 +1,4 @@
-INPUT("GetMyPDS.o")
+INPUT("GetMyPDS\GetMyPDS.o")
 OUTPUT_FORMAT("elf32-mcore-big")
 ENTRY(_main)
 SECTIONS
