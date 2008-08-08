@@ -10,6 +10,8 @@ mcore-elf-gcc -fshort-wchar -mbig-endian -nostdinc -m340 -I..\SDK -fomit-frame-p
 mcore-elf-ld -dn -r -no-bss-init -TMultiBkg\linker.ld -oMultiBkg.elf
 mcore-elf-gcc -fshort-wchar -mbig-endian -nostdinc -m340 -I..\SDK -fomit-frame-pointer -nostdlib -fno-builtin -c -o SwitchToBoot\SwitchToBoot.o SwitchToBoot\SwitchToBoot.c
 mcore-elf-ld -dn -r -no-bss-init -TSwitchToBoot\linker.ld -oSwitchToBoot.elf
+mcore-elf-gcc -fshort-wchar -mbig-endian -nostdinc -m340 -I..\SDK -fomit-frame-pointer -nostdlib -fno-builtin -c -o FunL\FunL.o FunL\FunL.c
+mcore-elf-ld -dn -r -no-bss-init -TFunL\linker.ld -oFunLights.elf
 
 del /S *.o
 pause
