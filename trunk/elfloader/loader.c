@@ -36,7 +36,7 @@ int _main( )
 #include <typedefs.h>
 #include <filesystem.h>
 #include <lang_strings.h>
-#include <canvas.h>
+#include <canvas.h> 
 #include <loader.h>
 #include <time_date.h>
 #include <util.h>
@@ -62,13 +62,14 @@ UINT32     InFusio_Resource[] = { 0x000EEED, InFusio_NameResID, 0x01000674, InFu
 
 UINT32     SelectedElf = 0;
 FILEINFO * fname = NULL;
+UINT32     CBssAdr = 0;
 
 typedef int ( * ELF_ENTRY)( ElfLoaderApp );
 
 const char app_name[APP_NAME_LEN] = "ElfLoader"; 
 WCHAR u_app_name[ APP_NAME_LEN ] = L"ElfLoader";
     
-WCHAR startupcfg[] = L"file://a/startup.cfg";
+WCHAR startupcfg[] = L"file://b/Elf/startup.cfg";
 
 ElfLoaderApp ** ElfStack = NULL;
 ElfFunctions * Symbols = ( ElfFunctions * )NULL;
@@ -670,8 +671,8 @@ UINT32 FindAppS(void)
     char                    uri[256];
     int id = 0;
 
-    WCHAR                   filter[] = L"file://a/\xFFFE*.elf";
-    WCHAR                   file[] =   L"file://a/";
+    WCHAR                   filter[] = L"file://b/Elf/\xFFFE*.elf";
+    WCHAR                   file[] =   L"file:/";
 
 	UINT16 res_count, count = 1; 
     fs_param.flags = 0x1C;
@@ -794,12 +795,71 @@ UINT32 LoaderEndApp( ElfLoaderApp * eapp )
 
     suFreeMem( eapp -> textptr );
     suFreeMem( eapp -> dataptr );
-
+	if(eapp -> bssptr)
+		suFreeMem( eapp -> bssptr );
+	
     return 0;
     //return AFW_CreateInternalQueuedEvAux( evcode_base, FBF_LEAVE, 0, 0 );
 }
 
 UINT32 EvCode = 0xA000; //Base evcode for our elfs
+
+UINT32 CalcBssSize(BYTE * ElfImage, UINT32 ElfVA)
+{
+	PElfFile 		ElfFile;
+	PElfSection 	ElfSection, ESection;
+	PElfRelocation  ElfReloc;
+	UINT32 			CurrentSymbol,symbols,CurrentSection;
+	INT				CurrentRelocation;
+	INT				RelocationSize;
+	PElfSymbol Symbol;
+	UINT32 BssSize = 0;
+	DWORD tmpAddr = 0;
+	PElfSection ElfSectionStrTab, SymTab;
+	
+	PFprintf("CalcBssSize enter\n");
+
+	ElfFile = ( PElfFile )ElfImage;
+	
+	for( CurrentSection = ElfFile -> SectionsNumb-1; CurrentSection > 0 ; CurrentSection++ )
+	{
+        ElfSectionStrTab = ( PElfSection )( ElfImage + ElfFile -> ShTableOffset + 
+									  ElfFile -> ShTabEntSize * CurrentSection );
+				 
+		if( ElfSectionStrTab -> Type == 3 )
+		{
+            //PFprintf( "[ ELF_RNNR_DEBUG_LOG ]Section StrTab 0x%x\n", ElfSectionStrTab -> Offset );
+            break;
+        }
+    }
+	
+	for( CurrentSection = 0; CurrentSection < ElfFile -> SectionsNumb; CurrentSection++ )
+	{
+        SymTab = ( PElfSection )( ElfImage + ElfFile -> ShTableOffset + 
+									  ElfFile -> ShTabEntSize * CurrentSection );
+				 
+		if( SymTab -> Type == 2 )
+		{
+            break;
+        }
+    }
+	
+	symbols = SymTab -> Size / SymTab -> EntrySize;
+	
+	for( CurrentSymbol = 0; CurrentSymbol < symbols; CurrentSymbol++ )
+	{
+		Symbol = (PElfSymbol)( ElfImage + SymTab -> Offset + SymTab -> EntrySize * CurrentSymbol );
+		char * name = ElfImage + ElfSectionStrTab -> Offset + Symbol -> Name;
+		if(Symbol -> Section == SHN_COMMON)
+			{
+				BssSize += Symbol -> Size + (Symbol -> Size % Symbol -> Value);
+				PFprintf("Symbol %s size 0x%x, value 0x%x, BssSize 0x%x\n", name, Symbol -> Size, Symbol -> Value, BssSize);
+			}
+		//PFprintf("Symbol %s size 0x%x, value 0x%x\n", name, Symbol -> Size, Symbol -> Value);
+	}
+	
+	return BssSize;
+}//---------------------------------------------------------------------------------------------------
 
 void LoadElf( WCHAR * FileName, UINT32 EvCode_Override )
 {
@@ -864,7 +924,7 @@ void LoadElf( WCHAR * FileName, UINT32 EvCode_Override )
 UINT32 BASE_ADDR;
 INT ExternalSymbolLookup( char *, unsigned * );
 
-PElfSection 	ElfSectionStrTab, ElfDataSection;
+PElfSection 	ElfSectionStrTab, ElfDataSection, ElfBssSection;
 
 UINT32 GetElfSymbol( BYTE * ElfImage, UINT32 i, unsigned * SymbolValue, unsigned SymTabSection, UINT32 ElfVA, PElfRelocation Relocation )
 {
@@ -920,6 +980,8 @@ UINT32 GetElfSymbol( BYTE * ElfImage, UINT32 i, unsigned * SymbolValue, unsigned
 	return 0;
 }
 
+
+
 UINT32 RelocateElf( BYTE * ElfImage, PElfRelocation Relocation, PElfSection Section, UINT32 ElfVA, ElfLoaderApp * ela )
 {
 	unsigned Address, SymbolValue;
@@ -927,22 +989,38 @@ UINT32 RelocateElf( BYTE * ElfImage, PElfRelocation Relocation, PElfSection Sect
 	PElfFile    ElfFile;
 	PDWORD 		Where;
 	INT			Error;
+	PElfSymbol  Symbol;
+	UINT32      Addr;
+	
 	
 	ElfFile  = ( PElfFile )ElfImage;
-	ESection = ( PElfSection )( ElfImage + ElfFile -> ShTableOffset + ElfFile -> ShTabEntSize * Section -> Info );
-
+	ESection = ( PElfSection )( ElfImage + ElfFile -> ShTableOffset + ElfFile -> ShTabEntSize * Section -> Link );
+			
+	
+	Symbol = ( PElfSymbol )( ElfImage + ESection -> Offset ) + ELF32_R_SYM( Relocation -> Info );
     //Address  = ( unsigned )BASE_ADDR + ESection -> Offset;
+	
+	
 	if( Section -> Info == 1 )
-        Where	 = ( PDWORD )( ela -> TextAddr + Relocation -> Address );
-    else if( Section -> Info == 3 )
-        Where	 = ( PDWORD )( ela -> DataAddr + Relocation -> Address );
-
+	    Where = ( PDWORD )( ela -> TextAddr + Relocation -> Address );
+	
+    else 
+		if( Section -> Info == 3 )
+			Where = ( PDWORD )( ela -> DataAddr + Relocation -> Address );
+			
 	Error = GetElfSymbol( ElfImage, ELF32_R_SYM( Relocation -> Info ), &SymbolValue, Section -> Link, ElfVA, Relocation );
 	if( Error != 0 )
 		return Error;
-	
-	//PFprintf( "Rel at 0x%x, val: 0x%x\n", Where, SymbolValue );
-	
+		
+	if(Symbol -> Section == SHN_COMMON)
+		{
+			*Where =  ela -> BssAddr + CBssAdr ;
+			CBssAdr+=Symbol -> Size;
+			PFprintf("Reloc into BSS at 0x%x data 0x%x value 0x%x\n",Where,*Where, Symbol -> Value);
+			
+			return 0;
+		}
+		
 	switch( ELF32_R_TYPE( Relocation -> Info ) )
 	{
 		case 1:
@@ -974,12 +1052,15 @@ ElfLoaderApp ParseElf( BYTE * ElfImage, UINT32 Size )
 	INT				SectionSize;
 	INT				RelocationSize;
 	INT				Error;
+	
+	UINT32 			BssSize = 0;
 
     ElfLoaderApp    ElfApp;
 
     DWORD ElfVA = 0;
 
     ElfApp . isFree    = FALSE;
+	ElfApp . bssptr = NULL;
 
     //BASE_ADDR = (UINT32)AllocImage;
 	ElfFile = ( PElfFile )ElfImage;
@@ -1058,13 +1139,15 @@ ElfLoaderApp ParseElf( BYTE * ElfImage, UINT32 Size )
             ElfApp . DataAddr = ( UINT32 )ElfApp . dataptr;
             
             ElfDataSection -> VirtualAddress = ( UINT32 )ElfApp . DataAddr;
-            
-            PFprintf( "[ ELF_RNNR_DEBUG_LOG ]Section '%s' mapped at 0x%x\n", name, ElfDataSection -> VirtualAddress );
+            PFprintf( "[ ELF_RNNR_DEBUG_LOG ]Section '%s' mapped at 0x%x, size 0x%x\n", name, ElfDataSection -> VirtualAddress,  ElfDataSection -> Size );
             memcpy( ( char * )ElfDataSection -> VirtualAddress, ElfImage + ElfDataSection -> Offset, ElfDataSection -> Size );
             
             break;
         }
     }
+
+
+	
     
 	for( CurrentSection = 0; CurrentSection < ElfFile -> SectionsNumb; CurrentSection++ )
 	{
@@ -1072,7 +1155,6 @@ ElfLoaderApp ParseElf( BYTE * ElfImage, UINT32 Size )
 									  ElfFile -> ShTabEntSize * CurrentSection );
 
     	char * name = ElfImage + ElfSectionStrTab -> Offset + ElfSection -> SectionName;
-
         if( ElfSection -> Type == 0 ) //jumps null section
             continue;
   
@@ -1087,7 +1169,7 @@ ElfLoaderApp ParseElf( BYTE * ElfImage, UINT32 Size )
         
             ElfFile -> EntryPoint += ElfVA;
         
-            PFprintf( "[ ELF_RNNR_DEBUG_LOG ]Section '%s' mapped at 0x%x\n", ElfImage + ElfSectionStrTab -> Offset + ElfSection -> SectionName, ElfVA );
+            PFprintf( "[ ELF_RNNR_DEBUG_LOG ]Section '%s' mapped at 0x%x, size 0x%x\n", ElfImage + ElfSectionStrTab -> Offset + ElfSection -> SectionName, ElfVA,  ElfSection -> Size );
             memcpy( ( void * )ElfVA, ElfImage + ElfSection -> Offset, ElfSection -> Size );
         }
 
@@ -1098,7 +1180,32 @@ ElfLoaderApp ParseElf( BYTE * ElfImage, UINT32 Size )
 
 		break;
 	}
+	//
+	
+	for( CurrentSection = 1; CurrentSection < ElfFile -> SectionsNumb; CurrentSection++ )
+	{
+        ElfBssSection = ( PElfSection )( ElfImage + ElfFile -> ShTableOffset + 
+									  ElfFile -> ShTabEntSize * CurrentSection );
 		
+		char * name = ElfImage + ElfSectionStrTab -> Offset + ElfBssSection -> SectionName;
+
+		if( !strcmp( name, ".bss" ) )
+        {
+			BssSize = CalcBssSize(ElfImage, ElfVA);
+			if(BssSize)
+			{
+				ElfApp . bssptr = ( UINT8 * )suAllocMem( BssSize, NULL );
+				ElfApp . BssAddr = ( UINT32 )ElfApp . bssptr;
+				ElfBssSection -> VirtualAddress = ( UINT32 )ElfApp . BssAddr;
+				CBssAdr = 0;
+				PFprintf( "[ ELF_RNNR_DEBUG_LOG ]Section '%s' mapped at 0x%x, size 0x%x\n", name, ElfBssSection -> VirtualAddress,  BssSize);
+            }
+            
+            break;
+        }
+		
+    }
+	
 	for( CurrentSection = 0; CurrentSection < ElfFile -> SectionsNumb; CurrentSection++ )
 	{
 		ElfSection = ( PElfSection )( ElfImage + ElfFile -> ShTableOffset + 
@@ -1123,6 +1230,8 @@ ElfLoaderApp ParseElf( BYTE * ElfImage, UINT32 Size )
                 suFreeMem( ElfApp . textptr );
                 ElfApp . textptr = NULL;
                 suFreeMem( ElfApp . dataptr );
+				if(ElfApp . bssptr)
+					suFreeMem( ElfApp . bssptr );
 				return ElfApp;
             }
 		}
@@ -1142,7 +1251,7 @@ ElfLoaderApp ParseElf( BYTE * ElfImage, UINT32 Size )
 UINT32 SymMax = 0;
 UINT32 Checksum = 0;
 
-WCHAR rloader[] = L"file://a/library.def";
+WCHAR rloader[] = L"file://b/Elf/library.def";
  
 INT LoadSymbolDB( )
 {
