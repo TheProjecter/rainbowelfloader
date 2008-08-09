@@ -69,7 +69,7 @@ typedef int ( * ELF_ENTRY)( ElfLoaderApp );
 const char app_name[APP_NAME_LEN] = "ElfLoader"; 
 WCHAR u_app_name[ APP_NAME_LEN ] = L"ElfLoader";
     
-WCHAR startupcfg[] = L"file://b/Elf/startup.cfg";
+WCHAR startupcfg[] = L"file://a/startup.cfg";
 
 ElfLoaderApp ** ElfStack = NULL;
 ElfFunctions * Symbols = ( ElfFunctions * )NULL;
@@ -671,8 +671,8 @@ UINT32 FindAppS(void)
     char                    uri[256];
     int id = 0;
 
-    WCHAR                   filter[] = L"file://b/Elf/\xFFFE*.elf";
-    WCHAR                   file[] =   L"file:/";
+    WCHAR                   filter[] = L"file://a/\xFFFE*.elf";
+    WCHAR                   file[] =   L"file://a";
 
 	UINT16 res_count, count = 1; 
     fs_param.flags = 0x1C;
@@ -812,6 +812,7 @@ UINT32 CalcBssSize(BYTE * ElfImage, UINT32 ElfVA)
 	UINT32 			CurrentSymbol,symbols,CurrentSection;
 	INT				CurrentRelocation;
 	INT				RelocationSize;
+	UINT32 tmp = 0;
 	PElfSymbol Symbol;
 	UINT32 BssSize = 0;
 	DWORD tmpAddr = 0;
@@ -852,7 +853,9 @@ UINT32 CalcBssSize(BYTE * ElfImage, UINT32 ElfVA)
 		char * name = ElfImage + ElfSectionStrTab -> Offset + Symbol -> Name;
 		if(Symbol -> Section == SHN_COMMON)
 			{
-				BssSize += Symbol -> Size + (Symbol -> Size % Symbol -> Value);
+				tmp = BssSize +  Symbol -> Value - (BssSize % Symbol -> Value);
+				BssSize += Symbol -> Size;
+				Symbol -> Value = tmp;
 				PFprintf("Symbol %s size 0x%x, value 0x%x, BssSize 0x%x\n", name, Symbol -> Size, Symbol -> Value, BssSize);
 			}
 		//PFprintf("Symbol %s size 0x%x, value 0x%x\n", name, Symbol -> Size, Symbol -> Value);
@@ -1014,9 +1017,11 @@ UINT32 RelocateElf( BYTE * ElfImage, PElfRelocation Relocation, PElfSection Sect
 		
 	if(Symbol -> Section == SHN_COMMON)
 		{
-			*Where =  ela -> BssAddr + CBssAdr ;
-			CBssAdr+=Symbol -> Size;
+			*Where = ela -> BssAddr + Symbol -> Value;
+			//CBssAdr+=Symbol -> Size;
 			PFprintf("Reloc into BSS at 0x%x data 0x%x value 0x%x\n",Where,*Where, Symbol -> Value);
+			//PFprintf("Relocation type %i\n",ELF32_R_TYPE( Relocation -> Info ));
+			
 			
 			return 0;
 		}
@@ -1251,7 +1256,7 @@ ElfLoaderApp ParseElf( BYTE * ElfImage, UINT32 Size )
 UINT32 SymMax = 0;
 UINT32 Checksum = 0;
 
-WCHAR rloader[] = L"file://b/Elf/library.def";
+WCHAR rloader[] = L"file://a/library.def";
  
 INT LoadSymbolDB( )
 {
