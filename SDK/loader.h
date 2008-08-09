@@ -10,8 +10,10 @@ typedef struct
     BOOL isFree;
     UINT32 TextAddr;
     UINT32 DataAddr;
+	UINT32 BssAddr;
     UINT8 * textptr;
     UINT8 * dataptr;
+	UINT8 * bssptr;
     UINT8 pid;
 } ElfLoaderApp;
 

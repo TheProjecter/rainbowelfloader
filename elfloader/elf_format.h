@@ -6,6 +6,8 @@
     #define ELF32_R_SYM(i)		((i) >> 8)
     #define ELF32_R_TYPE(i)		((i) & 0xff)
 
+    #define SHN_COMMON      0xfff2
+
     typedef UINT32 DWORD;
     typedef UINT32 INT;
     typedef DWORD * PDWORD;
