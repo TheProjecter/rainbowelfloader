@@ -2,6 +2,7 @@ INPUT("boot.o")
 INPUT("main.o")
 INPUT("keyboard.o")
 INPUT("ll_phone.o")
+INPUT("watchdog.o")
 OUTPUT_FORMAT("binary")
 SECTIONS
 {
@@ -9,5 +10,9 @@ SECTIONS
     {
     *(.text)
     *(.data)
+    }
+    .bss 0x08000000:
+    {
+    *(.bss)
     }
 }
