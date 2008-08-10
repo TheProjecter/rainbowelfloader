@@ -1,4 +1,10 @@
 #include <typedefs.h>
+#include <ll_phone.h>
+
+void pu_main_set_powerup_reason( int8 pwrp_reason )
+{
+    port_write_b( 0x8100000, pwrp_reason );
+}
 
 void port_write_l( uint32 port, int32 data )
 {

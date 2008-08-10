@@ -34,6 +34,19 @@ void pu_keyboard_init( )
     port_write_l( 0x20A000 + 0x3C,  0x00000000 );
 }
 
+typedef struct
+{
+    uint8 remaining_bits;
+    uint8 opt7: 1;
+    uint8 opt6: 1;
+    uint8 opt5: 1;
+    uint8 opt4: 1;
+    uint8 opt3: 1;
+    uint8 opt2: 1;
+    uint8 opt1: 1;
+    uint8 opt0: 1;
+} bit_test;
+
 int32 pu_keyboard_get_keys( )
 {
     int16 u1 = -0x801;
@@ -43,7 +56,8 @@ int32 pu_keyboard_get_keys( )
     
     int32 key = 0;
 
-    for( i = 0; i < 4; i++ )
+    //for( i = 0; i < 4; i++ )
+    while( 1 )
     {
         port_write_w( 0x219000 + 6, u1 );
         t = port_read_w( 0x219000 + 6 );
@@ -52,6 +66,11 @@ int32 pu_keyboard_get_keys( )
         key |= t;
         
         u1 >>= 1;
+        
+        bit_test * bt = ( bit_test * )&u1;
+        
+        if( !bt -> opt7 )
+            break;
     }
     
     port_write_w( 0x219000 + 6, 0xF0FF );
