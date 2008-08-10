@@ -4,10 +4,10 @@
 
 void pu_keyboard_init( )
 {
-    port_write_w( DEV_KEYBOARD + 0, 0x00FF );
-    port_write_w( DEV_KEYBOARD + 2, 0x0105 ); 
-    port_write_w( DEV_KEYBOARD + 4, 0x0F00 );
-    port_write_w( DEV_KEYBOARD + 6, 0x0000 );
+    port_write_w( 0x219000 + 0, 0x00FF );
+    port_write_w( 0x219000 + 2, 0x0105 ); 
+    port_write_w( 0x219000 + 4, 0x0F00 );
+    port_write_w( 0x219000 + 6, 0x0000 );
     
     port_write_l( 0x209000 + 0,     0x0F54D018 );
     port_write_l( 0x209000 + 4,     0xFFFFFFFF ); 
@@ -45,8 +45,8 @@ int32 pu_keyboard_get_keys( )
 
     for( i = 0; i < 4; i++ )
     {
-        port_write_w( DEV_KEYBOARD + 6, u1 );
-        t = port_read_w( DEV_KEYBOARD + 6 );
+        port_write_w( 0x219000 + 6, u1 );
+        t = port_read_w( 0x219000 + 6 );
         
         key <<= 8;
         key |= t;
@@ -54,32 +54,32 @@ int32 pu_keyboard_get_keys( )
         u1 >>= 1;
     }
     
-    port_write_w( DEV_KEYBOARD + 6, 0xF0FF );
+    port_write_w( 0x219000 + 6, 0xF0FF );
 
     return key;
 }
 
 void keyboard_set_light_top( bool state )
 {
-    int32 c_state = port_read_l( DEV_KEYB_TOP_LIGHT_CTRL );
+    int32 c_state = port_read_l( 0x20F01C );
     if( state )
         c_state |= 0x200;
     else
         c_state &= ~0x200;
         
-    port_write_l( DEV_KEYB_TOP_LIGHT_CTRL, c_state );
+    port_write_l( 0x20F01C, c_state );
 }
 
 void keyboard_set_light_bot( bool state )
 {
-    int32 c_state = port_read_l( DEV_KEYB_BOT_LIGHT_CTRL );
+    int32 c_state = port_read_l( 0x20A01C );
 
     if( state )
         c_state |= ( ( state & 1 ) << 0x16 );
     else
         c_state = 0x80000000;
     
-    port_write_l( DEV_KEYB_BOT_LIGHT_CTRL, c_state );
+    port_write_l( 0x20A01C, c_state );
 }
 
 void keyboard_set_light( bool state )
