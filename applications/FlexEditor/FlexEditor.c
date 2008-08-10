@@ -1,30 +1,3 @@
-/*
-    Copyright (c) 2008 theCor3 & flash.tato
-
-    Permission is hereby granted, free of charge, to any person
-    obtaining a copy of this software and associated documentation
-    files (the "Software"), to deal in the Software without
-    restriction, including without limitation the rights to use,
-    copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the
-    Software is furnished to do so, subject to the following
-    conditions:
-
-    The above copyright notice and this permission notice shall be
-    included in all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-    OTHER DEALINGS IN THE SOFTWARE.
-*/
-
-
-
 #include "FlexEditor.h"
 
 int	split( char *, char **, int, char * );
@@ -208,6 +181,8 @@ void LoadFlexDB( )
     
     split( buffer, edits, rows, "\n" );
     
+    ENTRIES_NUM = 0;
+    
     for( i = 0; i < rows; i++ )
     {
         split( edits[ i ], edit, 4, ";" );
@@ -219,6 +194,7 @@ void LoadFlexDB( )
         FlexEdits[ i ] . Offset = res;      
         FlexEdits[ i ] . Bit = edit[ 3 ][ 0 ] - '0'; //bit
         FlexEdits[ i ] . ReservedItem = FALSE;
+
         ENTRIES_NUM++;
     } 
     
@@ -278,14 +254,14 @@ UINT32 MainStateEnter( EVENT_STACK_T *ev_st,  void *app,  ENTER_STATE_TYPE_T typ
 
 typedef struct
 {
-    UINT8 opt0: 1;
-    UINT8 opt1: 1;
-    UINT8 opt2: 1;
-    UINT8 opt3: 1;
-    UINT8 opt4: 1;
-    UINT8 opt5: 1;
-    UINT8 opt6: 1;
     UINT8 opt7: 1;
+    UINT8 opt6: 1;
+    UINT8 opt5: 1;
+    UINT8 opt4: 1;
+    UINT8 opt3: 1;
+    UINT8 opt2: 1;
+    UINT8 opt1: 1;
+    UINT8 opt0: 1;
 } SeemOff;
 
 void FeatureSet( UINT32 seem, UINT16 offset, UINT8 bit )
@@ -324,7 +300,7 @@ void FeatureSet( UINT32 seem, UINT16 offset, UINT8 bit )
             seem_offset -> opt7 = !seem_offset -> opt7;
         break;
     }
-    
+
     SEEM_FDI_OUTSIDE_SEEM_ACCESS_write( 0, seem, 1, SEEM_00XX, 1024 );
 
     suFreeMem( SEEM_00XX );
