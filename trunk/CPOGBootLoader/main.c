@@ -1,5 +1,5 @@
 /*
-    C bootloader 4 Rainbow POG
+    CPOG Bootloader
 */
 
 //Base address -> 118DA4C8
@@ -20,7 +20,7 @@ int __stdc_main( )
         keyboard_set_light( false );
         switch( keys )
         {
-            case KEY_9: //the only workin' key :P
+            case KEY_9:
                 keyboard_set_light( true );
             break;
         }
