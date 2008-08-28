@@ -12,6 +12,8 @@ mcore-elf-gcc -fshort-wchar -mbig-endian -nostdinc -m340 -I..\SDK -fomit-frame-p
 mcore-elf-ld -dn -r -no-bss-init -TSwitchToBoot\linker.ld -oSwitchToBoot.elf
 mcore-elf-gcc -fshort-wchar -mbig-endian -nostdinc -m340 -I..\SDK -fomit-frame-pointer -nostdlib -fno-builtin -c -o FunL\FunL.o FunL\FunL.c
 mcore-elf-ld -dn -r -no-bss-init -TFunL\linker.ld -oFunLights.elf
+mcore-elf-gcc -fshort-wchar -mbig-endian -nostdinc -m340 -I..\SDK -fomit-frame-pointer -nostdlib -fno-builtin -c -o FontServ\FontServ.o FontServ\FontServ.c
+mcore-elf-ld -dn -r -no-bss-init -TFontServ\linker.ld -oFontServ.elf
 
 del /S *.o
 pause
